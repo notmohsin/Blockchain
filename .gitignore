@@ -11,3 +11,4 @@ venv/
 build/
 *.o
 *.out
+CustodyChain/backend/bin/
