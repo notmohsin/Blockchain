@@ -1,0 +1,13 @@
+# OS & Editor files
+.DS_Store
+.vscode/
+.zed/
+
+# Python / C++ / Build artifacts
+__pycache__/
+*.pyc
+.venv/
+venv/
+build/
+*.o
+*.out

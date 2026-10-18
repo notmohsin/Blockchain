@@ -1,0 +1,21 @@
+cd code
+zokrates compile -i hash_create.zok
+
+//compunte with desired secret (i.e 0 0 0 5)
+zokrates compute-witness -a 0 0 0 5 --verbose
+
+// Output will be something like Witness: ["263561599766550617289250058199814760685","65303172752238645975888084098459749904"]
+//Add those withness strings to assertion in hash_verify
+
+zokrates compile -i hash_verify.zok
+zokrates setup
+zokrates export-verifier
+zokrates compute-witness -a 0 0 0 5 (with the choosen secert)
+zokrates generate-proof
+
+
+
+
+
+//verifier.sol is the verifier smart contat -> we copy its content in our that becomes SmartContractFactoryWithZNP.sol
+//
