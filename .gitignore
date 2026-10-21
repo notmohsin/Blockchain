@@ -2,6 +2,7 @@
 .DS_Store
 .vscode/
 .zed/
+Papers/ 
 
 # Python / C++ / Build artifacts
 __pycache__/
