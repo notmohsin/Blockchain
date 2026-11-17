@@ -10,7 +10,7 @@
 		try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch("http://34.41.10.244:3000/assets", { signal: controller.signal });
+    const response = await fetch("http://localhost:3000/assets", { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!response.ok) throw new Error("Erro ao buscar ativos");
     assets = await response.json();
@@ -27,7 +27,7 @@
 
    async function transferAsset() {
     try {
-      const response = await fetch("http://34.41.10.244:3000/transferAsset", {
+      const response = await fetch("http://localhost:3000/transferAsset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: transferId, newOwner })
@@ -44,7 +44,7 @@
   }
 
     async function createAsset() {
-        const response = await fetch("http://34.41.10.244:3000/asset", {
+        const response = await fetch("http://localhost:3000/asset", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, who, what, when, where, why, how })
