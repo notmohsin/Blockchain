@@ -14,7 +14,7 @@ These are the decisions agreed after the meeting with the professor.
 
 ---
 
-## Phase 1: Persistent ledger (current Raft network, carried over to BFT)
+## Phase 1: Persistent ledger (current Raft network, carried over to BFT): DONE (commit 15d2dde)
 
 **Problem.** `network.sh down` deletes the ledger volumes and all crypto material. The chaincode containers are started with `--rm`, so stopping them removes them.
 
@@ -25,7 +25,7 @@ These are the decisions agreed after the meeting with the professor.
 5. **Verify:** create a record, note the block height and hash, then `stop` and `start`. The same record, height and hashes must come back, and the gateway must work again without re-deploying.
 6. Commit to `main`.
 
-## Phase 2: LaTeX report and evidence input specification (`outputs/report/`)
+## Phase 2: LaTeX report and evidence input specification (`outputs/report/`): DONE (commit 065c685)
 
 Report: *Evidence Fingerprinting and Chain of Custody on a Permissioned Ledger*.
 
@@ -67,7 +67,7 @@ Report: *Evidence Fingerprinting and Chain of Custody on a Permissioned Ledger*.
 11. Machine-readable spec: JSON Schema per evidence type in `outputs/spec/`, and a reference hashing tool in `outputs/tools/` used to produce the report's worked examples.
 12. Compile to PDF with `latexmk` and commit to `main`.
 
-## Phase 3: BFT consensus with 4 orderers and real organisations
+## Phase 3: BFT consensus with 4 orderers and real organisations: DONE (`CustodyChain/backend/network-bft/`; all 8 tests in `test-bft.sh` pass)
 
 1. Upgrade the Fabric binaries and images 2.5.9 → **3.1.5** (BFT ordering requires Fabric v3). Smoke-test the existing Raft network on 3.1.5 first.
 2. Organisation model (test phase), with each agency running one consensus node and, where relevant, one peer:

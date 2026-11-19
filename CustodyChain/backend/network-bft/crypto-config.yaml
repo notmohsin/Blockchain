@@ -1,0 +1,56 @@
+# CustodyChain BFT test network: identities for four agencies.
+# Each agency runs one BFT consenter (orderer). Police, FSL and Court also run one peer each.
+# cryptogen gives an agency's orderer and its peer separate CAs/MSPs (e.g. PoliceOrdererMSP and PoliceMSP).
+# In production one agency CA would issue both; for the test phase this keeps the tooling simple.
+
+OrdererOrgs:
+  - Name: PoliceOrderer
+    Domain: police.custodychain.local
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS: [localhost, 127.0.0.1]
+  - Name: FSLOrderer
+    Domain: fsl.custodychain.local
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS: [localhost, 127.0.0.1]
+  - Name: CourtOrderer
+    Domain: court.custodychain.local
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS: [localhost, 127.0.0.1]
+  - Name: ProsecutionOrderer
+    Domain: prosecution.custodychain.local
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS: [localhost, 127.0.0.1]
+
+PeerOrgs:
+  - Name: Police
+    Domain: police.custodychain.local
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS: [localhost, 127.0.0.1]
+    Users:
+      Count: 1
+  - Name: FSL
+    Domain: fsl.custodychain.local
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS: [localhost, 127.0.0.1]
+    Users:
+      Count: 1
+  - Name: Court
+    Domain: court.custodychain.local
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS: [localhost, 127.0.0.1]
+    Users:
+      Count: 1

@@ -1,0 +1,179 @@
+# CustodyChain BFT channel definition (Fabric v3).
+# Four consenters run by four agencies -> n = 4, f = 1 (tolerates one faulty or malicious orderer), quorum = 3.
+# Paths are relative to this directory (configtxgen is run with FABRIC_CFG_PATH pointing here).
+---
+Organizations:
+  # ------------------------------------------------------------------ orderer organisations (consenters)
+  - &PoliceOrderer
+    Name: PoliceOrdererMSP
+    ID: PoliceOrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/police.custodychain.local/msp
+    Policies: &PoliceOrdererPolicies
+      Readers: { Type: Signature, Rule: "OR('PoliceOrdererMSP.member')" }
+      Writers: { Type: Signature, Rule: "OR('PoliceOrdererMSP.member')" }
+      Admins:  { Type: Signature, Rule: "OR('PoliceOrdererMSP.admin')" }
+    OrdererEndpoints: [ orderer.police.custodychain.local:7050 ]
+
+  - &FSLOrderer
+    Name: FSLOrdererMSP
+    ID: FSLOrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/fsl.custodychain.local/msp
+    Policies:
+      Readers: { Type: Signature, Rule: "OR('FSLOrdererMSP.member')" }
+      Writers: { Type: Signature, Rule: "OR('FSLOrdererMSP.member')" }
+      Admins:  { Type: Signature, Rule: "OR('FSLOrdererMSP.admin')" }
+    OrdererEndpoints: [ orderer.fsl.custodychain.local:8050 ]
+
+  - &CourtOrderer
+    Name: CourtOrdererMSP
+    ID: CourtOrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/court.custodychain.local/msp
+    Policies:
+      Readers: { Type: Signature, Rule: "OR('CourtOrdererMSP.member')" }
+      Writers: { Type: Signature, Rule: "OR('CourtOrdererMSP.member')" }
+      Admins:  { Type: Signature, Rule: "OR('CourtOrdererMSP.admin')" }
+    OrdererEndpoints: [ orderer.court.custodychain.local:11050 ]
+
+  - &ProsecutionOrderer
+    Name: ProsecutionOrdererMSP
+    ID: ProsecutionOrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/prosecution.custodychain.local/msp
+    Policies:
+      Readers: { Type: Signature, Rule: "OR('ProsecutionOrdererMSP.member')" }
+      Writers: { Type: Signature, Rule: "OR('ProsecutionOrdererMSP.member')" }
+      Admins:  { Type: Signature, Rule: "OR('ProsecutionOrdererMSP.admin')" }
+    OrdererEndpoints: [ orderer.prosecution.custodychain.local:10050 ]
+
+  # ------------------------------------------------------------------ peer organisations (ledger + endorsement)
+  - &Police
+    Name: PoliceMSP
+    ID: PoliceMSP
+    MSPDir: ../organizations/peerOrganizations/police.custodychain.local/msp
+    Policies:
+      Readers:     { Type: Signature, Rule: "OR('PoliceMSP.admin', 'PoliceMSP.peer', 'PoliceMSP.client')" }
+      Writers:     { Type: Signature, Rule: "OR('PoliceMSP.admin', 'PoliceMSP.client')" }
+      Admins:      { Type: Signature, Rule: "OR('PoliceMSP.admin')" }
+      Endorsement: { Type: Signature, Rule: "OR('PoliceMSP.peer')" }
+    AnchorPeers:
+      - { Host: peer0.police.custodychain.local, Port: 7051 }
+
+  - &FSL
+    Name: FSLMSP
+    ID: FSLMSP
+    MSPDir: ../organizations/peerOrganizations/fsl.custodychain.local/msp
+    Policies:
+      Readers:     { Type: Signature, Rule: "OR('FSLMSP.admin', 'FSLMSP.peer', 'FSLMSP.client')" }
+      Writers:     { Type: Signature, Rule: "OR('FSLMSP.admin', 'FSLMSP.client')" }
+      Admins:      { Type: Signature, Rule: "OR('FSLMSP.admin')" }
+      Endorsement: { Type: Signature, Rule: "OR('FSLMSP.peer')" }
+    AnchorPeers:
+      - { Host: peer0.fsl.custodychain.local, Port: 8051 }
+
+  - &Court
+    Name: CourtMSP
+    ID: CourtMSP
+    MSPDir: ../organizations/peerOrganizations/court.custodychain.local/msp
+    Policies:
+      Readers:     { Type: Signature, Rule: "OR('CourtMSP.admin', 'CourtMSP.peer', 'CourtMSP.client')" }
+      Writers:     { Type: Signature, Rule: "OR('CourtMSP.admin', 'CourtMSP.client')" }
+      Admins:      { Type: Signature, Rule: "OR('CourtMSP.admin')" }
+      Endorsement: { Type: Signature, Rule: "OR('CourtMSP.peer')" }
+    AnchorPeers:
+      - { Host: peer0.court.custodychain.local, Port: 9051 }
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V3_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_5: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:              { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers:              { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins:               { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+    LifecycleEndorsement: { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+    # Default chaincode endorsement: a majority of the three agency peers (2 of 3) must sign every write.
+    Endorsement:          { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:         { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers:         { Type: ImplicitMeta, Rule: "ANY Writers" }
+    # Changing the ordering service needs a majority (3 of 4) of the agencies' orderer admins.
+    Admins:          { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+    BlockValidation: { Type: ImplicitMeta, Rule: "ANY Writers" }
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers: { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers: { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins:  { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  CustodyChainBFT:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations: [ *PoliceOrderer, *FSLOrderer, *CourtOrderer, *ProsecutionOrderer ]
+      Capabilities: *OrdererCapabilities
+      OrdererType: BFT
+      SmartBFT:
+        RequestBatchMaxCount: 100
+        RequestBatchMaxInterval: 50ms
+        RequestForwardTimeout: 2s
+        RequestComplainTimeout: 20s
+        RequestAutoRemoveTimeout: 3m0s
+        ViewChangeResendInterval: 5s
+        ViewChangeTimeout: 20s
+        LeaderHeartbeatTimeout: 1m0s
+        CollectTimeout: 1s
+        RequestBatchMaxBytes: 10485760
+        IncomingMessageBufferSize: 200
+        RequestPoolSize: 100000
+        LeaderHeartbeatCount: 10
+      ConsenterMapping:
+        - ID: 1
+          Host: orderer.police.custodychain.local
+          Port: 7050
+          MSPID: PoliceOrdererMSP
+          Identity: ../organizations/ordererOrganizations/police.custodychain.local/orderers/orderer.police.custodychain.local/msp/signcerts/orderer.police.custodychain.local-cert.pem
+          ClientTLSCert: ../organizations/ordererOrganizations/police.custodychain.local/orderers/orderer.police.custodychain.local/tls/server.crt
+          ServerTLSCert: ../organizations/ordererOrganizations/police.custodychain.local/orderers/orderer.police.custodychain.local/tls/server.crt
+        - ID: 2
+          Host: orderer.fsl.custodychain.local
+          Port: 8050
+          MSPID: FSLOrdererMSP
+          Identity: ../organizations/ordererOrganizations/fsl.custodychain.local/orderers/orderer.fsl.custodychain.local/msp/signcerts/orderer.fsl.custodychain.local-cert.pem
+          ClientTLSCert: ../organizations/ordererOrganizations/fsl.custodychain.local/orderers/orderer.fsl.custodychain.local/tls/server.crt
+          ServerTLSCert: ../organizations/ordererOrganizations/fsl.custodychain.local/orderers/orderer.fsl.custodychain.local/tls/server.crt
+        - ID: 3
+          Host: orderer.court.custodychain.local
+          Port: 11050
+          MSPID: CourtOrdererMSP
+          Identity: ../organizations/ordererOrganizations/court.custodychain.local/orderers/orderer.court.custodychain.local/msp/signcerts/orderer.court.custodychain.local-cert.pem
+          ClientTLSCert: ../organizations/ordererOrganizations/court.custodychain.local/orderers/orderer.court.custodychain.local/tls/server.crt
+          ServerTLSCert: ../organizations/ordererOrganizations/court.custodychain.local/orderers/orderer.court.custodychain.local/tls/server.crt
+        - ID: 4
+          Host: orderer.prosecution.custodychain.local
+          Port: 10050
+          MSPID: ProsecutionOrdererMSP
+          Identity: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/msp/signcerts/orderer.prosecution.custodychain.local-cert.pem
+          ClientTLSCert: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/tls/server.crt
+          ServerTLSCert: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/tls/server.crt
+    Application:
+      <<: *ApplicationDefaults
+      Organizations: [ *Police, *FSL, *Court ]

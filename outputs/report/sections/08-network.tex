@@ -12,7 +12,7 @@ Fabric uses an \emph{execute--order--validate} architecture~\cite{androulaki2018
 
 \subsection{Kafka, Raft and BFT}
 \begin{description}[style=nextline,leftmargin=1.2em]
-  \item[Kafka (not used).] Early Fabric releases ordered transactions through an Apache Kafka/ZooKeeper cluster. Kafka-based ordering was deprecated in Fabric v2 and is not available in Fabric v3. The current network does \emph{not} use Kafka: its channel configuration declares \code{OrdererType: etcdraft} (Raft).
+  \item[Kafka (not used).] Early Fabric releases ordered transactions through an Apache Kafka/ZooKeeper cluster. Kafka-based ordering was deprecated in Fabric v2, and \enquote{since release V3.0 Solo, Kafka and the System Channel have been removed} (Fabric 3.1.5 sample configuration). The current network does \emph{not} use Kafka: its channel configuration declares \code{OrdererType: etcdraft} (Raft).
   \item[Raft (current, crash fault tolerant).] A leader-based protocol~\cite{ongaro2014}. With $n$ orderers it tolerates $f$ \emph{crashed} nodes if $n \ge 2f+1$, but it assumes no node lies: a compromised leader could, for example, censor transactions. The test network inherited from the paper runs \textbf{a single} Raft orderer, so it has no fault tolerance and no consensus among independent parties in any meaningful sense.
   \item[BFT (decided).] Byzantine fault tolerance~\cite{lamport1982,castro1999} tolerates nodes that crash \emph{or behave arbitrarily}: send conflicting messages, propose invalid blocks, or collude. Fabric v3 ships a BFT ordering service based on the SmartBFT library~\cite{barger2021,fabricdocs}.
 \end{description}
@@ -27,7 +27,7 @@ Orderers $n$ & Raft: crashes tolerated & BFT: faulty nodes tolerated & BFT quoru
 \midrule
 1 & 0 & -- & -- & current test network \\
 3 & 1 & 0 & -- & Raft minimum for fault tolerance \\
-\textbf{4} & 1 & \textbf{1} & \textbf{3} & \textbf{BFT minimum; planned} \\
+\textbf{4} & 1 & \textbf{1} & \textbf{3} & \textbf{BFT minimum; implemented} \\
 7 & 3 & 2 & 5 & \\
 10 & 4 & 3 & 7 & \\
 \bottomrule
@@ -59,7 +59,7 @@ To make \enquote{no single agency can rewrite history} (R6) concrete, each conse
   \foreach \p in {p1,p2,p3} \draw[-{Latex[length=2mm]}, gray] (\p) -- (os);
   \draw[-{Latex[length=2mm]}, gray] (gw) -- (p1);
 \end{tikzpicture}
-\caption{Planned test topology: four agency-operated BFT orderers and three agency peers on channel \code{mychannel}.}
+\caption{Implemented test topology: four agency-operated BFT orderers and three agency peers on channel \code{custody}.}
 \label{fig:topology}
 \end{figure}
 

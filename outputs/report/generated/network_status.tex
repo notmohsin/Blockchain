@@ -1,1 +1,23 @@
-The BFT network described above is being implemented as Phase~3 of the project plan (\code{outputs/PLAN.md}). Its measured results will replace this paragraph.
+The BFT network of \cref{fig:topology} is implemented in \code{CustodyChain/backend/network-bft/} on Hyperledger Fabric v3.1.5 (SmartBFT ordering), and runs on the test laptop next to the paper's original Raft network, which is kept for reproduction. \code{test-bft.sh} verifies it end to end. The results of the run on 19~November~2026, on a freshly created network, are below.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}c>{\raggedright}p{4.6cm}X@{}}
+\toprule
+\# & Test & Result \\
+\midrule
+1 & Channel configuration & \code{ConsensusType: BFT}; 4 consenters (IDs 1--4: Police, FSL, Court and Prosecution orderer MSPs). PASS \\
+2 & Transaction, all orderers up & Committed VALID on all three peers in 0.2~s. The block carries \textbf{3 consenter signatures} (consenters 1, 2, 4), i.e.\ it is certified by a BFT quorum rather than a single orderer. PASS \\
+3 & One orderer stopped ($f=1$) & Committed with 3 of 4 orderers in 0.2~s. PASS \\
+4 & Two orderers stopped (no quorum) & No block produced; ledger height unchanged. BFT stops rather than risk safety. The pending request was not lost: it was ordered once the quorum returned. PASS \\
+5 & Recovery & Commits resumed about 56~s after the two orderers restarted; all four orderers caught up to the same height. PASS \\
+6 & Leader failure & The current leader (consenter 2, FSL) was stopped; a view change elected consenter 3 and commits resumed after about 54~s, which is bounded by the configured SmartBFT timeouts. PASS \\
+7 & Persistence & \code{stop}/\code{start}: identical heights, block hashes and world state; new writes commit. PASS \\
+8 & Resource use & 10 containers (4 orderers, 3 peers, 3 chaincode services) use about 370~MiB of RAM in total. \\
+\bottomrule
+\end{tabularx}
+\caption{Verification of the BFT network (\code{network-bft/test-bft.sh}).}
+\label{tab:bfttests}
+\end{table}
+
+The web gateway of the original prototype was made configurable through environment variables (defaults unchanged) and works against the BFT network through the Police peer. The recovery and view-change times reflect the test configuration (\code{LeaderHeartbeatTimeout} 1~min, \code{ViewChangeTimeout} 20~s, request complaint timeout 20~s). They can be tuned, but faster failure detection increases spurious view changes. With about 370~MiB for the whole network, the laptop can comfortably run larger configurations, for example 7 orderers ($f=2$), if required. The Fabric v3 test images are designed for single-host testing; production would place each agency's nodes on its own infrastructure.

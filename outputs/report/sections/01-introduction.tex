@@ -21,7 +21,7 @@ The following decisions were agreed after the project meeting of November 2026 a
 \toprule
 Topic & Decision \\
 \midrule
-Consensus & Byzantine fault tolerant (BFT) ordering with \textbf{four consensus nodes}, the minimum for tolerating one faulty node ($n = 3f+1$, $f=1$); see \cref{sec:network}. \\
+Consensus & Byzantine fault tolerant (BFT) ordering with \textbf{four consensus nodes}, the minimum for tolerating one faulty node ($n = 3f+1$, $f=1$). Implemented and tested (\cref{sec:netstatus}). \\
 Organisations & Real agencies are modelled (test phase): Police, Forensic Science Laboratory (FSL), Court and Prosecution each operate one consensus node. \\
 Hardware & A single laptop for the test phase. \\
 Persistence & Ledger and identities must survive restarts of Docker or the host. Wiping is a separate, explicit operation. This is implemented and tested (\cref{sec:persistence}). \\

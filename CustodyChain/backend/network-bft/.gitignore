@@ -1,0 +1,5 @@
+# generated identities, channel blocks, chaincode packages and test output
+organizations/
+channel-artifacts/
+test-results.txt
+log.txt
