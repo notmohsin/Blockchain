@@ -53,12 +53,13 @@ This file records every decision about the project, so that anyone (you, the pro
 | D-036 | 2026-11-19 | Role model and prototype users | Accepted | Implementer (delegated) | **pending** |
 | D-037 | 2026-11-19 | New JavaScript chaincode `evidence` in `chaincode-v2/` (P-03, P-09, P-10, P-11) | Accepted | Implementer (delegated) | **pending** |
 | D-038 | 2026-11-19 | Inter-agency transfer needs both agencies: key-level endorsement (P-04) | Accepted | Implementer (delegated) | **pending** |
-| D-039 | 2026-11-19 | Evidence store: MinIO, AES-256-GCM per file, content-addressed (P-05, P-06) | Accepted | Implementer (delegated) | **pending** |
+| D-039 | 2026-11-19 | Evidence store: MinIO, AES-256-GCM per file, content-addressed (P-05, P-06) | Partly superseded by D-045 (storage backend) | Implementer (delegated) | **pending** |
 | D-040 | 2026-11-19 | Hash in browser (SHA-256) and in gateway (SHA-256 + SHA3-256), mismatch rejected (P-07) | Accepted | Implementer (delegated) | **pending** |
 | D-041 | 2026-11-19 | Port JCS/Merkle/hashing to JS with cross-tests against Python vectors (P-08) | Accepted | Implementer (delegated) | **pending** |
 | D-042 | 2026-11-19 | New `gateway-v2/` and `frontend-v2/`; the authors' code stays untouched | Accepted | Implementer (delegated) | **pending** |
 | D-043 | 2026-11-19 | Prototype login: local user file, scrypt-hashed passwords, in-memory sessions | Accepted | Implementer (delegated) | **pending** |
 | D-044 | 2026-11-19 | BFT network rebuilt from scratch with per-chaincode service names | Accepted | Implementer (delegated) | **pending** |
+| D-045 | 2026-11-19 | Evidence store backend: encrypted content-addressed files in the gateway (not MinIO) | Accepted | Implementer (delegated) | **pending** |
 
 ---
 
@@ -353,6 +354,16 @@ This file records every decision about the project, so that anyone (you, the pro
 - **Decision:**
   - Services are named `<agency>-<chaincode>-cc`, and `network.sh all` now also starts the CAs, enrols users, starts MinIO and deploys both `custody` (authors') and `evidence` (v2).
   - The test network was wiped and rebuilt. It held only test records from `test-bft.sh`.
+
+### D-045 Evidence-store backend: encrypted, content-addressed files (supersedes the MinIO part of D-039)
+- **Date:** 2026-11-19 · **Status:** Accepted · **Decided by:** Implementer (delegated) · **Review: pending**
+- **Context:** while implementing D-039, the official `minio/minio` image turned out to be unavailable on Docker Hub ("object not found"); MinIO changed how it distributes community builds in 2025. Depending on an unofficial mirror would make the prototype fragile.
+- **Decision:**
+  - The store is a directory managed by the gateway (`EVIDENCE_STORE_DIR`, default `backend/evidence-store/`, gitignored). It sits outside Docker volumes, so `network.sh down` never deletes evidence.
+  - Each object is named by the SHA-256 of its plaintext and written once (no overwrite). A JSON metadata sidecar holds the size, media type, IV and tag, the wrapped data key, the uploading agency, and the time.
+  - The encryption scheme of D-039 is unchanged: per-file AES-256-GCM, with the data key wrapped by the agency master key.
+  - The store sits behind an interface (`put`, `get`, `has`), so an S3-compatible backend can replace it without touching the rest of the API.
+- **Limitation:** one prototype gateway serves all agencies and therefore holds all agencies' master keys. Production would run one gateway and key service per agency.
 
 ---
 

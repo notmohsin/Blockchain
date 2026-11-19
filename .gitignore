@@ -13,3 +13,6 @@ build/
 *.o
 *.out
 CustodyChain/backend/bin/
+
+# Evidence store (encrypted blobs) and agency master keys: never commit (D-039, D-045)
+CustodyChain/backend/evidence-store/

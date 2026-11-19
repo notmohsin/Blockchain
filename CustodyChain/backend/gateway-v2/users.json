@@ -1,0 +1,34 @@
+{
+  "io.sharma": {
+    "org": "police",
+    "role": "io",
+    "name": "Insp. A. Sharma",
+    "designation": "Police Inspector, Investigating Officer",
+    "badge": "GJP-44821",
+    "password": "scrypt$4b2d67437bd1d7e17debfc7d6df16137$25056c8ce4f3884607d119f8cdfb44bb592a507dbb7e93555ec7fb26640a2848"
+  },
+  "malkhana.desai": {
+    "org": "police",
+    "role": "malkhana",
+    "name": "HC M. Desai",
+    "designation": "Head Constable, Malkhana In-charge",
+    "badge": "GJP-51907",
+    "password": "scrypt$0fd61fae1d187d3c29265bed6f8a139b$51f5d3077661e672a0e7f628ef27e653d67c78a8bafaf618af260cd1e8674fe7"
+  },
+  "examiner.mehta": {
+    "org": "fsl",
+    "role": "examiner",
+    "name": "Dr. K. Mehta",
+    "designation": "Assistant Director, Questioned Documents",
+    "badge": "FSL-GNR-0213",
+    "password": "scrypt$c4d2df3240ca8510b2db185ed65f709f$e03be447ec3e0dd0b685a1dab4de6a027f7467f6ece88a391c84f3a30036424c"
+  },
+  "clerk.rao": {
+    "org": "court",
+    "role": "court_clerk",
+    "name": "S. Rao",
+    "designation": "Property Clerk, CJM Court Gandhinagar",
+    "badge": "CJM-GNR-77",
+    "password": "scrypt$b357d05a2c090d8fc8eabc9aa5ade5a7$5939d4c6de8a5daf749dc568c220e08ecb5352d966a96d9ce186afd817523e62"
+  }
+}
