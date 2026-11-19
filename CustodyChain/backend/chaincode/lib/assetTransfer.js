@@ -6,15 +6,23 @@ const { Contract } = require('fabric-contract-api');
 
 class AssetTransfer extends Contract {
 
+    _getTxTimestampString(ctx) {
+        const timestamp = ctx.stub.getTxTimestamp();
+        const sec = timestamp && timestamp.seconds ? (timestamp.seconds.low !== undefined ? timestamp.seconds.low : Number(timestamp.seconds)) : 0;
+        const nanos = timestamp && timestamp.nanos ? Number(timestamp.nanos) : 0;
+        return new Date(sec * 1000 + Math.round(nanos / 1000000)).toISOString();
+    }
+
     async InitLedger(ctx) {
+        const initTime = this._getTxTimestampString(ctx);
         const assets = [
             {
                 ID: '1',
                 Who: 'Tomoko',
                 What: 'Initial storage',
-                When: new Date().toISOString(),
+                When: initTime,
                 Where: 'Location A',
-                Why: 'Evidence collection',
+                Why: 'Initial storage of the evidence',
                 How: 'Sealed bag',
             },
         ];
@@ -52,7 +60,8 @@ class AssetTransfer extends Contract {
             throw new Error(`The asset ${id} already exists`);
         }
 
-        const asset = { ID: id, Who: who, What: what, When: when, Where: where, Why: why, How: how };
+        const timestamp = when || this._getTxTimestampString(ctx);
+        const asset = { ID: id, Who: who, What: what, When: timestamp, Where: where, Why: why, How: how };
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
         return JSON.stringify(asset);
     }
@@ -63,7 +72,8 @@ class AssetTransfer extends Contract {
             throw new Error(`The asset ${id} does not exist`);
         }
 
-        const updatedAsset = { ID: id, Who: who, What: what, When: when, Where: where, Why: why, How: how };
+        const timestamp = when || this._getTxTimestampString(ctx);
+        const updatedAsset = { ID: id, Who: who, What: what, When: timestamp, Where: where, Why: why, How: how };
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
         return JSON.stringify(updatedAsset);
     }
@@ -78,10 +88,47 @@ class AssetTransfer extends Contract {
       const asset = JSON.parse(assetJSON.toString());
 
       asset.Who = newOwner;
-      asset.When = new Date().toISOString();
+      asset.When = this._getTxTimestampString(ctx);
 
       await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
       return JSON.stringify(asset);
+    }
+
+    async GetAssetHistory(ctx, id) {
+        const exists = await this.AssetExists(ctx, id);
+        if (!exists) {
+            throw new Error(`The asset ${id} does not exist`);
+        }
+
+        const historyIterator = await ctx.stub.getHistoryForKey(id);
+        const history = [];
+        let result = await historyIterator.next();
+        while (!result.done) {
+            if (result.value) {
+                let timestampStr = '';
+                if (result.value.timestamp) {
+                    const sec = result.value.timestamp.seconds ? (result.value.timestamp.seconds.low !== undefined ? result.value.timestamp.seconds.low : Number(result.value.timestamp.seconds)) : 0;
+                    const nanos = result.value.timestamp.nanos ? Number(result.value.timestamp.nanos) : 0;
+                    timestampStr = new Date(sec * 1000 + Math.round(nanos / 1000000)).toISOString();
+                }
+
+                const item = {
+                    txId: result.value.txId,
+                    timestamp: timestampStr,
+                    isDelete: result.value.isDelete,
+                    value: null
+                };
+                try {
+                    item.value = JSON.parse(result.value.value.toString('utf8'));
+                } catch (err) {
+                    item.value = result.value.value.toString('utf8');
+                }
+                history.push(item);
+            }
+            result = await historyIterator.next();
+        }
+        await historyIterator.close();
+        return JSON.stringify(history);
     }
 
     async AssetExists(ctx, id) {

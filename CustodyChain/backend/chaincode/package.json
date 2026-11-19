@@ -10,7 +10,8 @@
         "lint": "eslint *.js */**.js",
         "pretest": "npm run lint",
         "test": "nyc mocha --recursive",
-        "start": "fabric-chaincode-node start"
+        "start": "fabric-chaincode-node start",
+        "server": "fabric-chaincode-node server --chaincode-address=$CHAINCODE_SERVER_ADDRESS --chaincode-id=$CHAINCODE_ID"
     },
     "engineStrict": true,
     "author": "Hyperledger",

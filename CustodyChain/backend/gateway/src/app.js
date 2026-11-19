@@ -70,6 +70,19 @@ app.post('/transferAsset', async (req, res) => {
         await contract.submitTransaction('TransferAsset', id, newOwner);
         res.status(200).json({ message: 'Transferência de posse realizada com sucesso!' });
     } catch (error) {
+        console.error('Transfer error details:', error.details || error);
+        res.status(500).json({ error: error.message, details: error.details });
+    }
+});
+
+app.get('/asset/:id/history', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const contract = getContract();
+        const resultBytes = await contract.evaluateTransaction('GetAssetHistory', id);
+        const result = JSON.parse(utf8Decoder.decode(resultBytes));
+        res.json(result);
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
