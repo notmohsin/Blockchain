@@ -23,6 +23,7 @@ export PATH="$PWD/../bin/v3.1.5:$PWD/../bin:$PATH"   # v3.1.5 first; ../bin supp
 export FABRIC_CFG_PATH="$PWD/config"          # core.yaml for the peer CLI
 export FABRIC_LOGGING_SPEC=${FABRIC_LOGGING_SPEC:-grpc=error:info}
 CHANNEL=${CHANNEL:-custody}
+CONSENSUS=${CONSENSUS:-bft}   # bft (default) | raft (evaluation control, D-051)
 CC_NAME=${CC_NAME:-custody}
 CC_VERSION=${CC_VERSION:-1.0}
 CC_SEQUENCE=${CC_SEQUENCE:-1}
@@ -83,8 +84,9 @@ cmd_up() {
 
 cmd_channel() {
   mkdir -p channel-artifacts
-  info "Creating genesis block for channel '$CHANNEL' (profile CustodyChainBFT)"
-  FABRIC_CFG_PATH="$PWD/configtx" configtxgen -profile CustodyChainBFT -outputBlock "channel-artifacts/$CHANNEL.block" -channelID "$CHANNEL" 2>&1 | tail -1
+  local profile=CustodyChainBFT; [ "$CONSENSUS" = raft ] && profile=CustodyChainRaft
+  info "Creating genesis block for channel '$CHANNEL' (profile $profile)"
+  FABRIC_CFG_PATH="$PWD/configtx" configtxgen -profile "$profile" -outputBlock "channel-artifacts/$CHANNEL.block" -channelID "$CHANNEL" 2>&1 | tail -1
   for o in "${ORDERERS[@]}"; do
     local t; t=$(ord_tls "$o")
     osnadmin channel join --channelID "$CHANNEL" --config-block "channel-artifacts/$CHANNEL.block" \

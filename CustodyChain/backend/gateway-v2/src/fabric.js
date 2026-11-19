@@ -25,7 +25,8 @@ function userMsp(user) { return path.join(cfg.ORGS[user.org].usersDir, `${user.u
 function contractFor(user) {
     if (gateways.has(user.username)) return gateways.get(user.username);
     const msp = userMsp(user);
-    const certFile = path.join(msp, 'signcerts', 'cert.pem');
+    const signDir = path.join(msp, 'signcerts');
+    const certFile = fs.existsSync(signDir) ? path.join(signDir, fs.readdirSync(signDir).find((n) => n.endsWith('.pem')) || 'cert.pem') : path.join(signDir, 'cert.pem');
     if (!fs.existsSync(certFile)) throw Object.assign(new Error(`no Fabric identity for ${user.username}; run network-bft/network.sh users`), { status: 500 });
     const keyDir = path.join(msp, 'keystore');
     const key = crypto.createPrivateKey(fs.readFileSync(path.join(keyDir, fs.readdirSync(keyDir)[0])));

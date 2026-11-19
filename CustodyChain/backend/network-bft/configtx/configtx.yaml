@@ -130,6 +130,9 @@ Profiles:
       <<: *OrdererDefaults
       Organizations: [ *PoliceOrderer, *FSLOrderer, *CourtOrderer, *ProsecutionOrderer ]
       Capabilities: *OrdererCapabilities
+      # D-050: no BlockValidation override is needed. For OrdererType BFT, configtxgen (Fabric 3.1.5) writes
+      # BlockValidation = 3-of-4 signatures by the consenter identities of ConsenterMapping (2f+1), replacing
+      # the ImplicitMeta rule of OrdererDefaults. Verified by decoding the generated and the deployed config.
       OrdererType: BFT
       SmartBFT:
         RequestBatchMaxCount: 100
@@ -174,6 +177,42 @@ Profiles:
           Identity: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/msp/signcerts/orderer.prosecution.custodychain.local-cert.pem
           ClientTLSCert: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/tls/server.crt
           ServerTLSCert: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/tls/server.crt
+    Application:
+      <<: *ApplicationDefaults
+      Organizations: [ *Police, *FSL, *Court ]
+
+  # D-051: control configuration for the evaluation: identical network, Raft (crash-fault tolerant) instead of BFT.
+  # Batch parameters aligned with SmartBFT (50 ms / 100 requests) so that only the consensus protocol differs.
+  CustodyChainRaft:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations: [ *PoliceOrderer, *FSLOrderer, *CourtOrderer, *ProsecutionOrderer ]
+      Capabilities: *OrdererCapabilities
+      OrdererType: etcdraft
+      BatchTimeout: 50ms
+      BatchSize:
+        MaxMessageCount: 100
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.police.custodychain.local
+            Port: 7050
+            ClientTLSCert: ../organizations/ordererOrganizations/police.custodychain.local/orderers/orderer.police.custodychain.local/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/police.custodychain.local/orderers/orderer.police.custodychain.local/tls/server.crt
+          - Host: orderer.fsl.custodychain.local
+            Port: 8050
+            ClientTLSCert: ../organizations/ordererOrganizations/fsl.custodychain.local/orderers/orderer.fsl.custodychain.local/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/fsl.custodychain.local/orderers/orderer.fsl.custodychain.local/tls/server.crt
+          - Host: orderer.court.custodychain.local
+            Port: 11050
+            ClientTLSCert: ../organizations/ordererOrganizations/court.custodychain.local/orderers/orderer.court.custodychain.local/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/court.custodychain.local/orderers/orderer.court.custodychain.local/tls/server.crt
+          - Host: orderer.prosecution.custodychain.local
+            Port: 10050
+            ClientTLSCert: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/prosecution.custodychain.local/orderers/orderer.prosecution.custodychain.local/tls/server.crt
     Application:
       <<: *ApplicationDefaults
       Organizations: [ *Police, *FSL, *Court ]

@@ -98,8 +98,12 @@ async function registerFromUpload(req, parentId) {
 
 function loadManifest(rec) {
     if (!store.has(rec.manifest_sha256)) return null;
-    const { buf } = store.get(rec.manifest_sha256);
-    return JSON.parse(buf.toString('utf8'));
+    try {
+        const { buf } = store.get(rec.manifest_sha256);   // decrypts and re-checks the content hash
+        return JSON.parse(buf.toString('utf8'));
+    } catch (e) {
+        throw Object.assign(new Error(`evidence store integrity failure for the manifest of ${rec.evidence_id}: ${e.message}`), { status: 409, storeError: true });
+    }
 }
 
 // ---------------------------------------------------------------------------------------------- routes
@@ -185,8 +189,9 @@ api.post('/evidence/:id/verify', upload.single('file'), wrap(async (req, res) =>
     if (!req.file) throw badRequest('upload the file to verify as field "file"');
     const record = await fabric.evaluate(req.user, 'GetEvidence', req.params.id);
     const h = fp.hashBuffer(req.file.buffer);
-    const manifest = loadManifest(record);
-    const checks = { manifest_available: !!manifest };
+    let manifest = null; let storeError = null;
+    try { manifest = loadManifest(record); } catch (e) { if (!e.storeError) throw e; storeError = e.message; }
+    const checks = { manifest_available: !!manifest, ...(storeError ? { store_error: storeError } : {}) };
     let match = null;
     if (manifest) {
         checks.manifest_sha256_matches_ledger = fp.manifestHash(manifest) === record.manifest_sha256;
@@ -214,7 +219,10 @@ api.get('/evidence/:id/artefacts/:aid', wrap(async (req, res) => {
     if (!manifest || fp.manifestHash(manifest) !== record.manifest_sha256) throw Object.assign(new Error('manifest missing or does not match the ledger'), { status: 409 });
     const a = manifest.artefacts.find((x) => x.artefact_id === req.params.aid);
     if (!a) return res.status(404).json({ error: 'no such artefact' });
-    const { buf } = store.get(a.sha256);   // decrypts and re-checks the content hash
+    let buf;
+    try { ({ buf } = store.get(a.sha256)); } catch (e) {   // decrypts and re-checks the content hash
+        throw Object.assign(new Error(`evidence store integrity failure for ${a.artefact_id}: ${e.message}. The stored file is NOT released.`), { status: 409 });
+    }
     await fabric.submit(req.user, 'RecordEvent', [req.params.id, 'ACCESS', JSON.stringify({ artefact_id: a.artefact_id, sha256: a.sha256, purpose: 'download' }), reason, '']);
     res.setHeader('Content-Type', a.media_type);
     res.setHeader('Content-Disposition', `attachment; filename="${(a.file_name || a.artefact_id).replace(/"/g, '')}"`);

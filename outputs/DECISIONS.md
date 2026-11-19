@@ -44,7 +44,7 @@ This file records every decision about the project, so that anyone (you, the pro
 | D-027 | 2026-11-19 | Court orderer on port 11050 (9050 taken by Tor) | Accepted | Implementer | — |
 | D-028 | 2026-11-19 | Deterministic chaincode packages; services use the approved package ID | Accepted | Implementer | — |
 | D-029 | 2026-11-19 | Gateway identity/peer paths configurable by env vars; defaults unchanged | Accepted | Implementer | **pending** |
-| D-030 | 2026-11-19 | Block validation left as in the Fabric BFT sample; peer-side quorum check to be verified | Open | Implementer | **investigate** |
+| D-030 | 2026-11-19 | Block validation left as in the Fabric BFT sample; peer-side quorum check to be verified | Superseded by D-050 | Implementer | resolved |
 | D-031 | 2026-11-19 | Every decision is recorded in this log | Accepted | User | — |
 | D-032 | 2026-11-19 | Autonomous run M0–M5 on branch `prototype/m0-m5` | Accepted | User | — |
 | D-033 | 2026-11-19 | Resolve P-01..P-12 with the recommended options for this run | Accepted | Implementer (delegated) | **pending** |
@@ -64,6 +64,8 @@ This file records every decision about the project, so that anyone (you, the pro
 | D-047 | 2026-11-19 | UI scope and behaviour: role-aware actions, browser hashing shown before upload, reasons mandatory | Accepted | Implementer (delegated) | **pending** |
 | D-048 | 2026-11-20 | Identity checks (L2) run by the app via the Python reference tool; reference fingerprints computed at registration | Accepted | Implementer (delegated) | **pending** |
 | D-049 | 2026-11-20 | Court outputs as print-ready HTML (custody report, BSA s.63 Parts A/B) + JSON verification bundle; PDF via the browser | Accepted | Implementer (delegated) | **pending** |
+| D-050 | 2026-11-20 | Peers require 3-of-4 consenter signatures on every block: Fabric 3 sets this automatically for BFT (resolves D-030) | Accepted | Implementer (delegated) | — |
+| D-051 | 2026-11-20 | Evaluation method: own load generator (not Caliper); BFT-4 vs a Raft-4 control on the identical network | Accepted | Implementer (delegated) | **pending** |
 
 ---
 
@@ -420,6 +422,34 @@ This file records every decision about the project, so that anyone (you, the pro
   - **PDF:** made by the browser's Print → Save as PDF. The UI test produces sample PDFs this way. This avoids a server-side PDF engine.
 - **Alternatives:** server-side PDF (headless Chromium in the gateway, heavy) or LaTeX templates (needs TeX on the server).
 - **Limitation:** the ledger record inside a bundle comes from the gateway. A fully independent verifier should read the record from any agency's peer, which the instructions state.
+
+### D-050 Peers require a BFT quorum of signatures on every block (resolves D-030)
+- **Date:** 2026-11-20 · **Status:** Accepted · **Decided by:** Implementer (delegated)
+- **Question (D-030):** do peers *reject* a block that carries fewer than 2f+1 consenter signatures? Our channel definition said `BlockValidation: ImplicitMeta ANY Writers`, which one orderer's signature would satisfy.
+- **Design source:** Fabric's BFT design (RFC 0010, "Fabric core block retrieval and signature verification") keeps the `BlockValidation` policy as the rule peers apply. For BFT it should be "a signature policy with a rule of a suitable threshold … with identity principals that correspond to the `ConsenterMapping`".
+- **Finding (verified, 2026-11-20):** for `OrdererType: BFT`, **`configtxgen` 3.1.5 writes `BlockValidation` itself** as `n_out_of: 3` over the **four consenter certificates** (`IDENTITY` principals from `ConsenterMapping`). This replaces whatever the profile specifies.
+  - Shown by generating a genesis block from the *original* configuration (`ANY Writers`, commit `ab0c9a5`) and decoding it: 3-of-4 consenter identities.
+  - The deployed channel was decoded as well, with the same result.
+  - So the network was never exposed: every peer has always required 3 of the 4 agency consenters to sign each block. That matches the 3 signatures observed on every block (`test-bft.sh`).
+- **Decision:**
+  - No override in `configtx.yaml`. An explicit role-based rule was tried and found to be overridden, so it was removed to keep the configuration truthful; a comment explains the behaviour.
+  - The verification is kept: `outputs/evaluation/blockvalidation-policy.json` is the decoded deployed policy.
+- **Limitation:** peer *rejection* of a forged single-signature block is not demonstrated empirically, since injecting one would need a modified orderer. It follows from the policy, which is now confirmed in the deployed configuration.
+- **Sources:** Hyperledger Fabric RFC 0010, <https://hyperledger.github.io/fabric-rfcs/text/0010-bft-signatures.html>; Barger et al., ICBC 2021 (arXiv:2107.06922).
+
+### D-051 Evaluation method: own load generator; Raft-4 control
+- **Date:** 2026-11-20 · **Status:** Accepted · **Decided by:** Implementer (delegated) · **Review: pending**
+- **Context:** Roadmap M8 named Hyperledger Caliper. Caliper's Fabric connectors target the 2.x SDKs and add a large toolchain; compatibility with a Fabric 3.1.5 BFT network is unverified.
+- **Decision:**
+  - **Load generator:** `gateway-v2/scripts/bench.js` uses the same `@hyperledger/fabric-gateway` client as the application. It measures, at fixed concurrency levels, end-to-end submit latency (endorse → order → commit: p50, p95, max), committed throughput, and query latency, for three operations:
+    - `RecordEvent(ACCESS)`: one event write;
+    - `RegisterEvidence`: record, events, indexes;
+    - `GetEvidence`: a query.
+  - **Control:** to isolate the cost of BFT, the *same* network (4 orderers, 3 peers, same machine, same chaincode) is also built with **Raft (etcdraft) with 4 consenters** (`CONSENSUS=raft ./network.sh all`).
+    - Batch parameters are aligned: Raft `BatchTimeout` 50 ms and `MaxMessageCount` 100, matching SmartBFT's `RequestBatchMaxInterval` 50 ms and `RequestBatchMaxCount` 100.
+    - Otherwise Raft's default 2 s batch timeout would dominate its latency.
+  - The test network is wiped for each configuration; it holds only test data.
+- **Limitations:** a single laptop, so no network latency between agencies. The absolute numbers are a lower bound on latency and an upper bound on throughput for a real deployment; the BFT-versus-Raft *difference* is the meaningful result.
 
 ---
 
