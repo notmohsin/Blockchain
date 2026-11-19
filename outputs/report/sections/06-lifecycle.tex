@@ -1,0 +1,44 @@
+\section{Lifecycle events}
+\label{sec:lifecycle}
+
+After registration, everything that happens to an item is an append-only \emph{custody event} (schema \code{custody-event.schema.json}). Events are never updated or deleted. A mistake is corrected by a \code{CORRECTION} event that references the erroneous one (R5). For every event the chaincode takes the \emph{who} (certificate subject and MSP) and the \emph{when} (transaction timestamp) from the transaction itself (R4). The client supplies only the \emph{what}, \emph{why}, \emph{where} and supporting references, which replaces the free-text 5W1H fields of the original prototype~\cite{loffi2025}.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Event & Meaning and mandatory content & Allowed actor (proposed) \\
+\midrule
+\code{REGISTER} & Item enters the system; \code{manifest\_sha256}, \code{merkle\_root} & collecting officer \\
+\code{SEAL} / \code{RESEAL} & Package sealed or resealed; seal IDs observed & current custodian \\
+\code{TRANSFER\_INITIATE} & Custodian proposes a handover; receiving MSP and custodian & current custodian only \\
+\code{TRANSFER\_ACCEPT} / \code{\_REJECT} & Receiver confirms or refuses; seal IDs read and \code{seal\_intact} & named receiver only \\
+\code{ACCESS} & Item or files viewed without change & any authorised user \\
+\code{EXAMINE\_START} / \code{\_END} & Examination opened or closed; attachments (lab notes, report hashes) & custodian (examiner) \\
+\code{DERIVE} & Child item created (forensic image, extraction, aliquot, enhanced copy, post-test reference); child manifest hash & custodian \\
+\code{VERIFY\_INTEGRITY} & L1 re-check: method, result, recomputed hashes & any authorised user \\
+\code{VERIFY\_IDENTITY} & L2 re-identification: method, version, score, threshold, result, L1 hashes of the new captures & custodian \\
+\code{SUBMIT\_COURT} & Produced before court; certificate hashes & custodian \\
+\code{RETURN} / \code{ARCHIVE} / \code{DISPOSE} & End of lifecycle; court-order reference required & custodian (on order) \\
+\code{CORRECTION} & Corrects an earlier event (by tx id) & author of the original event or supervisor \\
+\bottomrule
+\end{tabularx}
+\caption{Custody event types. Custody passes only through the two-phase INITIATE/ACCEPT pair, so neither party can create a handover the other did not sign.}
+\label{tab:events}
+\end{table}
+
+\paragraph{Two-phase transfer.} In the original prototype any client could set a new owner. Here, a transfer is proposed by the current custodian (checked against the certificate of the last accepted holder) and becomes effective only when the named receiver signs \code{TRANSFER\_ACCEPT}. The receiver records the seal numbers read and whether the seal is intact. A broken seal does not block the transfer, since evidence must still move, but it is permanently recorded and should trigger a \code{VERIFY\_IDENTITY}.
+
+\paragraph{Example timeline for the notebook (item E004).}
+\begin{enumerate}[nosep]
+  \item \code{REGISTER} by the IO at the scene: 2 photographs and 6 page scans, Merkle root over 8 leaves (\cref{tab:nbled}).
+  \item \code{SEAL}: bag \code{TEB-GJ-0007741}.
+  \item \code{TRANSFER\_INITIATE} to \code{FSLMSP}, with the forwarding-letter reference as reason.
+  \item \code{TRANSFER\_ACCEPT} at the FSL counter: seal read, intact.
+  \item \code{VERIFY\_IDENTITY}: re-scan of 6 sides, maximum pHash distance \NbRescanMaxDist{} $\le 10$, MATCH (\cref{tab:nbrescan}).
+  \item \code{EXAMINE\_START} \ldots{} \code{EXAMINE\_END}, with the hash of the FSL report attached.
+  \item \code{TRANSFER\_INITIATE} and \code{\_ACCEPT} back to the police, then \code{SUBMIT\_COURT}, with the hashes of the s.63 certificates attached.
+\end{enumerate}
+The example events are in \code{spec/examples/notebook.events.json} and validate against the schema.
+
+\paragraph{From events to the paper chain-of-custody form.} The SOP requires, for every package, the name and signature of each person who takes possession of or transports the evidence, the date of transfer and the evidence label or serial number, recorded chronologically and without opinion~\cite{sopbnss}. Every one of these fields is present in the event history, with the signature replaced by the ledger-verified certificate signature. The form can therefore be printed from the ledger rather than maintained separately.

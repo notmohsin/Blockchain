@@ -1,0 +1,51 @@
+[
+  {
+    "spec_version": "1.0",
+    "evidence_id": "GJ-GNR-CYBPS-2026-000123-E004",
+    "event_type": "REGISTER",
+    "reason": "Seized under BNSS s.105 during search of premises (FIR 123/2026)",
+    "location": "Plot 14, GIDC, Gandhinagar",
+    "manifest_sha256": "d5b719250e11dda255782f9fa1d4b77d746ae94d7a5bc5232df470b2e902ade1",
+    "merkle_root": "6e8451494a032e3317bc66df35c259c968a35e2fc67832d4f079695e9c514102"
+  },
+  {
+    "spec_version": "1.0",
+    "evidence_id": "GJ-GNR-CYBPS-2026-000123-E004",
+    "event_type": "TRANSFER_INITIATE",
+    "reason": "Forwarded to FSL Gandhinagar for questioned-document examination, letter no. CPS/FSL/412/2026",
+    "to_org_msp": "FSLMSP",
+    "to_custodian_subject": "CN=k.mehta,OU=client,O=fsl.custodychain.local"
+  },
+  {
+    "spec_version": "1.0",
+    "evidence_id": "GJ-GNR-CYBPS-2026-000123-E004",
+    "event_type": "TRANSFER_ACCEPT",
+    "reason": "Received at FSL evidence counter",
+    "transfer_ref": "<tx id of TRANSFER_INITIATE>",
+    "seal_ids_observed": [
+      "TEB-GJ-0007741"
+    ],
+    "seal_intact": true
+  },
+  {
+    "spec_version": "1.0",
+    "evidence_id": "GJ-GNR-CYBPS-2026-000123-E004",
+    "event_type": "VERIFY_IDENTITY",
+    "reason": "Identity check on receipt: re-scan of all 6 sides compared with reference scans",
+    "verification": {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "result": "MATCH",
+      "score": "4",
+      "threshold": "10",
+      "query_artefact_sha256": [
+        "7d1dd5a349b1a7e5d4a0acf6954e738317abecfcd5f16bf692aab3c6635dd9d1",
+        "7b0b17e348236ed1ead84827751ef2b9d2e12bbb39210adfa9ae8f44e2dce129",
+        "a7b2fb2817d69f4c922e3d9228ab545938bb938e66a10e01408b7742a83df841",
+        "a2267f0ad4b9b4b16f88e2340ce0071a345f645b4cdaf1d7b972b519b19f4bb9",
+        "b95f550fb3623ca5f85e61f1068c5df301167c2ef0f0511759f511563bad99a0",
+        "ee4a979f22b2b39a46bd9e48738caf8208d4388cbb06544bf34243507a725d2a"
+      ]
+    }
+  }
+]

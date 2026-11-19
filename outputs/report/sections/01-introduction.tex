@@ -1,0 +1,51 @@
+\section{Introduction}
+\label{sec:intro}
+
+\subsection{Purpose of this document}
+CustodyChain began as a reproduction of the Hyperledger Fabric chain-of-custody prototype of Loffi et al.~\cite{loffi2025}. Reproducing it showed that the prototype stores free-text \enquote{5W1H} records and nothing that ties a record to the evidence it describes. There is no hash of a file, no description of how a physical object is identified, and no rule about which inputs are mandatory. That gap is the subject of this document. Before more smart-contract code is written we need clarity on four questions:
+
+\begin{enumerate}[label=\textbf{Q\arabic*}]
+  \item \textbf{What exactly is hashed} for each kind of evidence, given that the ledger can only ever hold a fingerprint of the evidence and never the evidence itself?
+  \item \textbf{What a hash does and does not prove}, and in particular how physical evidence is handled when \enquote{no two photographs are ever the same}.
+  \item \textbf{Which inputs are mandatory} at each stage and for each evidence type, so that the system has a well-defined input contract rather than free text.
+  \item \textbf{How the network runs}: which consensus algorithm, how many nodes, run by whom, and how the ledger persists.
+\end{enumerate}
+
+This is an internal discussion draft. It aims to be precise enough to implement from, and explicit about what is a design decision, what is a recommendation and what is still open (\cref{sec:limits}).
+
+\subsection{Decisions already taken}
+The following decisions were agreed after the project meeting of November 2026 and are assumed throughout.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Topic & Decision \\
+\midrule
+Consensus & Byzantine fault tolerant (BFT) ordering with \textbf{four consensus nodes}, the minimum for tolerating one faulty node ($n = 3f+1$, $f=1$); see \cref{sec:network}. \\
+Organisations & Real agencies are modelled (test phase): Police, Forensic Science Laboratory (FSL), Court and Prosecution each operate one consensus node. \\
+Hardware & A single laptop for the test phase. \\
+Persistence & Ledger and identities must survive restarts of Docker or the host. Wiping is a separate, explicit operation. This is implemented and tested (\cref{sec:persistence}). \\
+Fingerprints & Both \emph{integrity} hashes and \emph{identity} fingerprints are required (\cref{sec:twolayer}). \\
+Legal frame & The Indian criminal-procedure and evidence framework (BNSS, BSA) is in scope (\cref{sec:legal}). \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Summary of the proposal}
+\begin{keypoint}[The design in five sentences]
+\begin{enumerate}[nosep,leftmargin=*]
+  \item Every evidence item is documented by a set of \emph{artefacts}: files such as photographs, scans, 3D scans, videos, forensic images and documents. Each artefact is hashed with \shatwo{} and \shathree{} at the earliest possible moment, ideally on the capture device.
+  \item The artefacts, the case and collection facts, and class-specific attributes are written into a schema-validated \emph{evidence manifest}. The manifest is serialised canonically (RFC~8785) and hashed, and its artefacts are bound by a salted Merkle tree (RFC~6962).
+  \item Only the manifest hash and the Merkle root, plus the custody events that follow, go on the ledger. Files and manifests stay off-chain in encrypted evidence storage.
+  \item Exact hashes prove that \emph{records} have not been altered. Whether a \emph{physical item} is the same one that was seized is established separately, by comparing new captures with the reference captures (perceptual image hashes, 3D-scan deviation, seal and label identifiers) under declared, calibrated thresholds. The result is recorded as a custody event.
+  \item The ledger is ordered by a BFT consensus of four agency-operated nodes, so no single agency can rewrite, reorder or suppress the history.
+\end{enumerate}
+\end{keypoint}
+
+\subsection{Accompanying artefacts}
+This report is accompanied by a machine-readable input specification, a reference tool and worked examples. All of these live in the project repository under \code{outputs/}.
+\begin{itemize}
+  \item \code{spec/evidence-manifest.schema.json} and \code{spec/custody-event.schema.json}: JSON Schema (draft 2020-12) definitions of the inputs. \Cref{app:spec} is generated from them.
+  \item \code{tools/evidence\_hash.py}: the reference implementation of hashing, canonicalisation, Merkle trees and proofs, verification, perceptual hashing and 3D-scan comparison.
+  \item \code{tools/make\_worked\_examples.py}: generates the synthetic evidence and every number in \cref{sec:worked}.
+\end{itemize}

@@ -1,0 +1,117 @@
+\section{Worked examples}
+\label{sec:worked}
+
+All values in this section were computed by \code{tools/make\_worked\_examples.py} using the reference tool \code{tools/evidence\_hash.py}. The evidence is synthetic but follows the procedures of \cref{sec:classes}. Salts are derived from a fixed demonstration seed so that the numbers are reproducible; in production they are random. The resulting manifests validate against the schema and are in \code{spec/examples/}.
+
+\subsection{Crime-scene photograph: why integrity and identity are different questions}
+\Cref{fig:scene} shows the reference photograph, a second photograph of the same scene taken seconds later, and a copy of the reference with the knife digitally removed. \Cref{tab:photo} compares seven variants with the reference by exact hash (L1) and by perceptual hash (L2).
+
+\begin{figure}[htbp]
+\centering
+\begin{tabular}{ccc}
+\includegraphics[width=0.31\linewidth]{figures/scene_original.jpg} &
+\includegraphics[width=0.31\linewidth]{figures/scene_second.jpg} &
+\includegraphics[width=0.31\linewidth]{figures/scene_tampered.jpg} \\
+\small (a) reference \code{IMG\_0001} & \small (b) second shot, same scene & \small (c) knife digitally removed
+\end{tabular}
+\caption{Synthetic scene photographs (reduced).}
+\label{fig:scene}
+\end{figure}
+
+\begin{table}[htbp]
+\centering\small
+\input{generated/photo_table.tex}
+\caption{Seven variants of a scene photograph compared with the reference by \shatwo{} (L1) and 64-bit DCT pHash (L2).}
+\label{tab:photo}
+\end{table}
+
+What the table shows:
+\begin{itemize}
+  \item \textbf{Only a byte-for-byte copy passes L1.} Re-saving with identical settings, or editing one EXIF field without touching a pixel, produces an unrelated \shatwo{}. This is why the SOP insists that recordings are never opened in editing software before hashing~\cite{sopbnss}.
+  \item \textbf{A second photograph of the same scene} fails L1, as every new capture must (\enquote{no two photographs are the same}), yet is recognised by L2 (distance \PhotoSecondDist{}).
+  \item \textbf{The tampered image passes L2} (distance \PhotoTamperDist{}) and is caught only by L1. Perceptual fingerprints must therefore never be used to establish integrity.
+  \item \textbf{A different scene} is far away in L2 (distance \PhotoOtherDist{}).
+\end{itemize}
+
+\subsection{Recovered notebook: page scans, Merkle tree, tampering and re-identification}
+The notebook (item E004) is documented by a cover photograph, an edge photograph and six lossless page scans at 300~dpi (\cref{fig:notebook}). \Cref{tab:nbart} lists the artefacts, and \cref{tab:nbled} shows what is written to the ledger.
+
+\begin{figure}[htbp]
+\centering
+\begin{tabular}{cc}
+\includegraphics[height=5.2cm]{figures/notebook_cover.jpg} &
+\includegraphics[height=5.2cm]{figures/notebook_page3.png} \\
+\small cover photograph (A001) & \small page 3 scan (A005): torn corner, ring stain
+\end{tabular}
+\caption{Reference captures of the notebook (reduced).}
+\label{fig:notebook}
+\end{figure}
+
+\begin{table}[htbp]
+\centering\small
+\input{generated/notebook_artefacts_table.tex}
+\caption{Notebook artefacts in Merkle-leaf order (SHA-256 truncated).}
+\label{tab:nbart}
+\end{table}
+
+\begin{table}[htbp]
+\centering\small
+\input{generated/notebook_ledger_table.tex}
+\caption{Ledger record of the notebook: the only data about E004 replicated on-chain.}
+\label{tab:nbled}
+\end{table}
+
+\paragraph{Attack 1: a page is substituted in the evidence store.} An insider replaces the scan of page 4 with a scan of a re-written page 4. Verification against the manifest reports:
+\input{generated/notebook_tamper.tex}
+The exact artefact (A006, page 4) is identified, and the Merkle root recomputed from the files no longer matches.
+
+\paragraph{Attack 2: the insider also rewrites the manifest.} The manifest is now internally consistent with the forged page, but it no longer matches the ledger:
+\input{generated/notebook_tamper2.tex}
+Defeating this would require changing the ledger record, which needs a BFT quorum of agencies (\cref{sec:network}).
+
+\paragraph{Selective disclosure.} To show a court only page 4, the custodian discloses that page, its salt and the inclusion proof in \cref{tab:proof}. The verifier recomputes the leaf and the path and obtains the ledger's Merkle root without seeing any other page.
+
+\begin{table}[htbp]
+\centering\small
+\input{generated/proof_table.tex}
+\caption{RFC 6962 inclusion proof for page 4 (hashes truncated). Three sibling hashes suffice for eight leaves.}
+\label{tab:proof}
+\end{table}
+
+\paragraph{Re-identification at the FSL.} On receipt, all six sides are re-scanned on a different scanner. \Cref{tab:nbrescan} shows that every \shatwo{} differs, as expected, while the perceptual distances stay at or below \NbRescanMaxDist{}. The substituted page lies at distance \NbForgedDist{} and is rejected.
+
+\begin{table}[htbp]
+\centering\small
+\input{generated/notebook_rescan_table.tex}
+\caption{L2 re-identification of the notebook pages (threshold $d_H \le 10$).}
+\label{tab:nbrescan}
+\end{table}
+
+\subsection{Physical item: 3D scan of a knife}
+The knife (item E002) is documented by a structured-light scan of \KnifeRefPoints{} points (\cref{fig:knife}). Re-scans are taken in a new pose, with new sampling and 0.15~mm sensor noise, then aligned by ICP and compared symmetrically (\cref{tab:knife}).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/knife_scan_top.png}
+\caption{Reference 3D scan of the knife (top view of the point cloud).}
+\label{fig:knife}
+\end{figure}
+
+\begin{table}[htbp]
+\centering\small
+\input{generated/knife_table.tex}
+\caption{3D-scan re-identification (rule: RMS $\le$ \KnifeRuleRms{} mm and maximum $\le$ \KnifeRuleMax{} mm).}
+\label{tab:knife}
+\end{table}
+
+The RMS barely changes across all four cases, because it is dominated by sampling density, so a small local defect hardly moves it. The \emph{maximum} symmetric deviation is what reveals the 8$\times$5~mm nick, the broken tip and the 6~mm longer look-alike. Two lessons follow. The metric must be symmetric and must include a local term. And thresholds must be calibrated against the scanner's own repeatability: here the honest re-scan reaches a maximum of about 2.4~mm purely from sampling.
+
+\subsection{Forensic image: acquisition verification and damage localisation}
+\begin{table}[htbp]
+\centering\small
+\input{generated/disk_table.tex}
+\caption{Acquisition of an 8 MiB medium; a single bit flipped later in a working copy.}
+\label{tab:disk}
+\end{table}
+
+The acquisition is verified when the hash of the stream read from the source equals the hash of the finished image. A single flipped bit in a later working copy changes the whole-file hash completely. The chunk Merkle tree localises the damage to one 1~MiB chunk, so the rest of the copy can still be shown to be intact.

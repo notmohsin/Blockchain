@@ -1,0 +1,43 @@
+\section{Cryptographic background}
+\label{sec:background}
+
+\subsection{Hash functions and their security properties}
+A cryptographic hash function $\Hash : \{0,1\}^* \to \{0,1\}^n$ maps an input of any length to a fixed-length digest (here $n = 256$). For evidence work three properties matter:
+\begin{description}[style=nextline,leftmargin=1.2em]
+  \item[Pre-image resistance.] Given $h$, it is infeasible to find any $x$ with $\Hash(x) = h$ (about $2^{n}$ work).
+  \item[Second pre-image resistance.] Given $x$, it is infeasible to find $x' \neq x$ with $\Hash(x') = \Hash(x)$ (about $2^{n}$ work). This is the property that stops a custodian from substituting a different file with the same hash.
+  \item[Collision resistance.] It is infeasible to find any pair $x \neq x'$ with $\Hash(x) = \Hash(x')$ (about $2^{n/2}$ work by the birthday bound). This matters when the adversary can influence the original. For example, a person preparing two versions of a document in advance could have one hashed and later produce the other.
+\end{description}
+The \emph{avalanche} behaviour of a good hash, where changing one input bit flips about half of the output bits, is why a single altered pixel, EXIF field or sector produces a completely unrelated digest (\cref{sec:worked}).
+
+\paragraph{Algorithm choice.} \shatwo{} (SHA-2 family, FIPS~180-4~\cite{fips180}) offers 128-bit collision resistance and is the algorithm named explicitly in the BSA Schedule certificate~\cite{bsa2023}. \textsc{md5} and \textsc{sha-1}, which the same certificate also lists, are \textbf{broken for collision resistance}. Practical \textsc{md5} collisions have been known since 2004--05~\cite{wang2005}, and a full \textsc{sha-1} collision was published in 2017~\cite{stevens2017}. They may still appear in tool reports for cross-reference, but they must never be the sole fingerprint. We record \emph{two} independent digests per artefact: \shatwo{} and \shathree{} (Keccak, FIPS~202~\cite{fips202}). The two have unrelated internal designs, so a future weakness in one does not immediately compromise records, which addresses R10.
+
+\subsection{Canonical serialisation}
+Hashing structured data (a manifest) requires that the same logical content always produces the same bytes. JSON permits arbitrary key order, whitespace and number formats, so we use the JSON Canonicalization Scheme (JCS, RFC~8785~\cite{rfc8785}). JCS sorts keys by UTF-16 code units, uses no insignificant whitespace, and fixes string escaping and number serialisation. To remove floating-point ambiguity entirely, our manifests forbid floating-point numbers: decimals such as \code{"148.5"} grams are carried as strings. The \emph{manifest hash} is $\shatwo(\mathrm{JCS}(M))$.
+
+\subsection{Merkle trees}
+A Merkle tree~\cite{merkle1987} hashes a list of leaves pairwise up to a single \emph{root}. Changing any leaf changes the root. Any single leaf can be proven to belong to the root by revealing only $\lceil \log_2 N \rceil$ sibling hashes (an \emph{inclusion proof}), without revealing the other leaves. We use the exact construction of Certificate Transparency (RFC~6962~\cite{rfc6962}, verified per RFC~9162~\cite{rfc9162}):
+\begin{align*}
+\mathrm{MTH}(\{d_0\}) &= \shatwo(\texttt{0x00} \,\|\, d_0), \\
+\mathrm{MTH}(D_{[0:n]}) &= \shatwo\big(\texttt{0x01} \,\|\, \mathrm{MTH}(D_{[0:k]}) \,\|\, \mathrm{MTH}(D_{[k:n]})\big), \quad k = \text{largest power of 2} < n.
+\end{align*}
+The \texttt{0x00}/\texttt{0x01} prefixes provide domain separation, so a leaf can never be passed off as an internal node (second-pre-image attacks on naive Merkle trees). Our leaves are \emph{salted}:
+\[
+d_i = s_i \,\|\, \mathrm{id}_i \,\|\, \shatwo(\text{artefact}_i), \qquad s_i \xleftarrow{\$} \{0,1\}^{256}.
+\]
+The salt $s_i$ is kept off-chain in the manifest. It prevents someone who holds a candidate file (for example a known image) from confirming, using only ledger data, that the file is part of a case. This is the same privacy idea as the salted hashes of Burri et al.~\cite{burri2020}.
+
+For very large single files (video, disk images) the same tree can be built over fixed-size chunks (\emph{chunk Merkle root}), so damage can be localised to a chunk rather than merely detected (\cref{sec:worked}).
+
+\subsection{Signatures, identity and time}
+Hyperledger Fabric is permissioned. Every participant holds an X.509 certificate issued by its organisation's certificate authority, and organisations are represented on the channel by Membership Service Providers (MSPs)~\cite{androulaki2018}. Every transaction is signed by the submitting client and by the endorsing peers. The chaincode can therefore take the \emph{actor} of an event from the signer's certificate (\code{ctx.clientIdentity}) and the \emph{time} from the transaction header (\code{ctx.stub.getTxTimestamp()}), which satisfies R4. The transaction timestamp is set by the client and checked by the network, and is not a trusted timestamp in the RFC~3161 sense~\cite{rfc3161}. Its integrity comes from the block order agreed by consensus. Where an independent trusted time is needed (for example, to prove a hash existed before a specific instant to a party outside the network), the manifest hash can additionally be time-stamped by an RFC~3161 Time-Stamping Authority.
+
+\subsection{Perceptual fingerprints and geometric comparison}
+\label{sec:perceptual}
+A \emph{perceptual hash} maps similar-looking images to similar short codes. We use the DCT-based 64-bit pHash~\cite{zauner2010}. The image is reduced to $32\times32$ grey levels and a 2-D discrete cosine transform is taken. The $8\times8$ lowest-frequency coefficients are kept, and each bit records whether a coefficient exceeds the median of the 63 AC coefficients. Similarity is the Hamming distance $d_H \in [0,64]$. Re-photographing or re-scanning the same object yields small $d_H$; different content yields large $d_H$.
+
+For 3D scans we rigidly align the new scan to the reference with the Iterative Closest Point (ICP) algorithm~\cite{besl1992}, initialised from principal axes. We then measure the \emph{symmetric} nearest-neighbour deviation, reporting RMS, 95th percentile and maximum. The comparison must be symmetric. Distances from the new scan to the reference reveal added or displaced material. Only distances from the reference to the new scan reveal \emph{missing} material such as a nick or a broken tip; our first implementation measured one direction only and accepted a damaged knife as a match, an error the worked example now guards against.
+
+\begin{caution}[Perceptual and geometric fingerprints are not integrity proofs]
+They are designed to \emph{tolerate} change. An image from which an object has been digitally removed can have the same perceptual hash as the original (\cref{tab:photo}: Hamming distance \PhotoTamperDist{}). They serve only to re-identify; integrity is always established by exact hashes.
+\end{caution}

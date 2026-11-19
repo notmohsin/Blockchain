@@ -1,0 +1,29 @@
+\section{Limitations, risks and open questions}
+\label{sec:limits}
+
+\subsection{What the system cannot do}
+\begin{enumerate}
+  \item \textbf{Garbage in, garbage out at collection.} If a staged scene is photographed, a planted item is seized or a false description is written, the ledger preserves the falsehood faithfully. The mitigations are procedural (independent witnesses, continuous A/V recording under BNSS s.105, device-generated hashes, prompt anchoring), and the blockchain contributes nothing until the first hash is committed. This is also the observation of the reviewed literature on physical evidence~\cite{batista2023,patil2024}.
+  \item \textbf{L2 is probabilistic.} Perceptual and geometric fingerprints have false-match and false-non-match rates that depend on the device, the operator, the object and the threshold. The thresholds in this document ($d_H \le 10$; RMS $\le$ \KnifeRuleRms{} mm, maximum $\le$ \KnifeRuleMax{} mm) were set on synthetic data and are illustrative only. Calibration on real captures, with measured error rates per evidence type, is required before any L2 result is reported as more than an examiner's aid.
+  \item \textbf{Fine alterations of physical documents} (a changed digit, added strokes) are below the resolution of page-level fingerprints and remain a matter for questioned-document examination.
+  \item \textbf{Items that legitimately change} (decay, swabbing, test-firing) require a new reference after each change; otherwise L2 comparisons against the original capture will fail for innocent reasons.
+  \item \textbf{Collusion of a quorum.} BFT with four nodes tolerates one faulty agency, not two. Governance, meaning who operates which node and under what oversight, is as important as the protocol.
+  \item \textbf{Key compromise.} A stolen officer certificate can sign false events. This requires certificate revocation, hardware-backed keys on capture devices, and a policy for retrospectively flagging events signed with a compromised key.
+  \item \textbf{Availability of the off-chain store.} The ledger proves integrity; it does not keep files alive. The master-negative store needs its own backup and replication policy (the SOP requires an off-site backup~\cite{sopbnss}).
+\end{enumerate}
+
+\subsection{Privacy}
+Only fingerprints are on-chain. Artefact leaves are salted, so on-chain data cannot be used to test whether a known file belongs to a case. Personal data stays in the manifest, which is access-controlled and deletable off-chain. Fabric private data collections could restrict even manifest hashes to the agencies involved in a case. Whether this is necessary is an open question (O4 below).
+
+\subsection{Algorithm agility}
+Each artefact carries two digests from unrelated families. If one is weakened, records remain protected by the other, and a migration can add a new digest by registering a \code{DERIVE}d manifest that references the old one, without rewriting history.
+
+\subsection{Open questions for discussion}
+\begin{enumerate}[label=\textbf{O\arabic*}]
+  \item \textbf{Scope of physical evidence for the prototype.} Which classes must be fully implemented first? Recommendation: scene photographs, A/V recordings, physical documents and physical items.
+  \item \textbf{3D capture in practice.} Is a structured-light scanner realistic at the scene or the police station, or should photogrammetry from a phone, which is cheaper but less accurate, be the baseline?
+  \item \textbf{Calibration data.} Can real (or realistic staged) captures be obtained to calibrate L2 thresholds and measure error rates?
+  \item \textbf{Confidentiality between agencies.} Should all agencies see all ledger records, or should private data collections restrict records per case?
+  \item \textbf{Integration with e-Sakshya.} Is an integration that consumes e-Sakshya's capture hashes a realistic target, or should the prototype provide its own capture app?
+  \item \textbf{Legal review.} The points marked \emph{to verify} in \cref{sec:legal} need confirmation by a legal expert.
+\end{enumerate}

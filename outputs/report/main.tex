@@ -1,0 +1,93 @@
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------------------------------------------------ packages
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[htt]{hyphenat}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage{graphicx}
+\usepackage[section]{placeins}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric,backgrounds}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=ieee,maxnames=4]{biblatex}
+\addbibresource{references.bib}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,capitalise]{cleveref}
+
+\definecolor{ink}{HTML}{1F2A44}
+\definecolor{accent}{HTML}{B5532A}
+\definecolor{soft}{HTML}{EEF1F6}
+\definecolor{okgreen}{HTML}{2E7D4F}
+
+\titleformat{\section}{\Large\bfseries\color{ink}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.7em}{}
+\setlength{\parskip}{0.45em}
+\setlength{\parindent}{0pt}
+\setlist{itemsep=0.15em,topsep=0.3em}
+\renewcommand{\arraystretch}{1.15}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{ink}CustodyChain: Evidence Fingerprinting}
+\fancyhead[R]{\small\color{ink}Internal discussion draft}
+\fancyfoot[C]{\small\thepage}
+
+\lstdefinestyle{json}{basicstyle=\ttfamily\scriptsize,breaklines=true,columns=fullflexible,
+  frame=single,rulecolor=\color{gray!40},backgroundcolor=\color{soft},showstringspaces=false}
+
+\newtcolorbox{keypoint}[1][]{colback=soft,colframe=ink,boxrule=0.6pt,arc=2pt,left=6pt,right=6pt,top=4pt,bottom=4pt,fonttitle=\bfseries,title=#1}
+\newtcolorbox{caution}[1][]{colback=accent!6,colframe=accent,boxrule=0.6pt,arc=2pt,left=6pt,right=6pt,top=4pt,bottom=4pt,fonttitle=\bfseries,title=#1}
+
+\newcommand{\Hash}{\mathsf{H}}
+\newcommand{\shatwo}{\textsc{sha-256}}
+\newcommand{\shathree}{\textsc{sha3-256}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\input{generated/macros.tex}
+
+\title{\color{ink}\textbf{Fingerprinting Real-World Evidence for a\\Permissioned Chain-of-Custody Ledger}\\[0.4em]
+\large How hashes are computed for physical and digital evidence, what they prove,\\ the input specification, and how the CustodyChain network will run}
+\author{CustodyChain project\\\small Internal discussion document (draft v0.1)}
+\date{19 November 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+\noindent A blockchain does not hold evidence. It holds \emph{fingerprints} of evidence and a record of who did what to it, and when. This document sets out precisely how those fingerprints are produced for each class of evidence we expect to handle: crime-scene photographs, search-and-seizure video, CCTV exports, recovered documents such as notebooks, general physical items, biological samples, seized devices, forensic images, mobile extractions, cloud data, IoT logs and procedural paperwork. We separate two questions that are often confused. The first is whether a record has been altered (\emph{integrity}), which exact cryptographic hashes answer. The second is whether this is the same physical item (\emph{identity}), which hashes cannot answer and which needs tolerant comparison of new captures against reference captures. This separation is what resolves the objection that \enquote{no two photographs are ever the same}. We define a canonical, schema-validated \emph{evidence manifest} for each item. Its \shatwo{} digest and a salted Merkle root over its files are the only evidence data anchored on the ledger. We map the design to the Bharatiya Nagarik Suraksha Sanhita and Bharatiya Sakshya Adhiniyam (including the Section 63 certificate), state the residual risks, and describe the planned Byzantine-fault-tolerant network of four consensus nodes operated by separate agencies. Every number in the worked examples was computed by the reference tool that accompanies this document.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\input{sections/01-introduction}
+\input{sections/02-problem}
+\input{sections/03-background}
+\input{sections/04-two-layer-model}
+\input{sections/05-evidence-classes}
+\input{sections/06-lifecycle}
+\input{sections/07-legal}
+\input{sections/08-network}
+\input{sections/09-worked-examples}
+\input{sections/10-limitations}
+
+\printbibliography[heading=bibintoc]
+
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+\input{sections/appendix-a-spec}
+\input{sections/appendix-b-reproduce}
+
+\end{document}

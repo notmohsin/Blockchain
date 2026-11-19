@@ -1,0 +1,21 @@
+\section{Reproducing the results}
+\label{app:repro}
+
+\begin{lstlisting}[style=json,language=bash]
+cd outputs
+python3 tools/make_worked_examples.py        # artefacts, manifests, tables, figures
+python3 tools/schema_to_tex.py               # Appendix A from the JSON Schemas
+cd report && latexmk -pdf main.tex            # this document
+
+# Independent checks with the reference tool
+python3 tools/evidence_hash.py validate spec/examples/notebook.manifest.json
+python3 tools/evidence_hash.py verify   spec/examples/notebook.manifest.json --base worked-example/files
+python3 tools/evidence_hash.py prove    spec/examples/notebook.manifest.json A006
+python3 tools/evidence_hash.py compare-images worked-example/files/photo/IMG_0001.jpg \
+                                              worked-example/files/photo/IMG_0001_knife_removed.jpg
+python3 tools/evidence_hash.py compare-mesh worked-example/files/knife/reference_scan.ply \
+                                            worked-example/files/knife/rescan_notched.ply
+sha256sum worked-example/files/photo/IMG_0001.jpg   # any standard tool gives the same L1 hash
+\end{lstlisting}
+
+Requirements: Python 3 with \code{numpy}, \code{Pillow}, \code{jsonschema} (and optionally \code{scipy} for faster 3D comparison); a \TeX{} distribution with \code{biber}. The generated evidence files are deterministic for a given library version but are not stored in the repository; re-running the generator recreates them.

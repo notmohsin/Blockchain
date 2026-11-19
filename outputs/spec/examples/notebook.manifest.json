@@ -1,0 +1,367 @@
+{
+  "spec_version": "1.0",
+  "evidence_id": "GJ-GNR-CYBPS-2026-000123-E004",
+  "parent_evidence_id": null,
+  "evidence_class": "PHYSICAL_DOCUMENT",
+  "title": "Spiral notebook 'ACCOUNTS 2026' recovered from desk drawer",
+  "description": "Blue spiral notebook, A6, handwritten entries in blue/black ink on 6 sides; found in the top drawer of the desk in room 2.",
+  "case": {
+    "fir_number": "123/2026",
+    "police_station": "Cyber Crime Police Station Gandhinagar",
+    "district": "Gandhinagar",
+    "state": "Gujarat",
+    "sections_invoked": [
+      "BNS s.318(4)",
+      "BNS s.61(2)"
+    ],
+    "court": "Chief Judicial Magistrate, Gandhinagar"
+  },
+  "collection": {
+    "collected_at": "2026-11-19T11:18:00+05:30",
+    "location": {
+      "description": "Office premises of accused, ground floor, room 2",
+      "address": "Plot 14, GIDC, Gandhinagar",
+      "latitude": "23.2156",
+      "longitude": "72.6369",
+      "position_source": "GNSS"
+    },
+    "collected_by": {
+      "name": "Insp. A. Sharma",
+      "role": "Investigating Officer",
+      "designation": "Police Inspector",
+      "badge_or_employee_id": "GJP-44821",
+      "organisation": "Gujarat Police",
+      "pki_subject": "CN=a.sharma,OU=client,O=police.custodychain.local"
+    },
+    "witnesses": [
+      {
+        "name": "R. Patel",
+        "role": "Independent Witness",
+        "address": "Sector 21, Gandhinagar"
+      },
+      {
+        "name": "M. Desai",
+        "role": "Independent Witness",
+        "address": "Sector 22, Gandhinagar"
+      }
+    ],
+    "legal_basis": "BNSS s.105 search and seizure",
+    "seizure_memo_ref": "GJ-GNR-CYBPS-2026-000123-E020",
+    "av_recording_ref": "GJ-GNR-CYBPS-2026-000123-E010",
+    "condition_on_collection": "Intact; corner of page 3 torn; ring stain on cover"
+  },
+  "packaging": {
+    "container": "tamper-evident evidence bag",
+    "seal_ids": [
+      "TEB-GJ-0007741"
+    ],
+    "label_id": "QR:GJ-GNR-CYBPS-2026-000123-E004",
+    "sealed_by": {
+      "name": "Insp. A. Sharma",
+      "role": "Investigating Officer",
+      "designation": "Police Inspector",
+      "badge_or_employee_id": "GJP-44821",
+      "organisation": "Gujarat Police",
+      "pki_subject": "CN=a.sharma,OU=client,O=police.custodychain.local"
+    },
+    "sealed_at": "2026-11-19T11:31:00+05:30"
+  },
+  "class_attributes": {
+    "document_type": "spiral notebook",
+    "page_count": 6,
+    "leaf_count": 3,
+    "dimensions_mm": {
+      "width": "105",
+      "height": "148",
+      "thickness": "4"
+    },
+    "binding": "metal spiral, left edge",
+    "writing_media": [
+      "blue ballpoint",
+      "black ballpoint"
+    ],
+    "distinguishing_features": [
+      "'ACCOUNTS 2026' label on cover",
+      "ring-shaped stain on cover",
+      "bottom-right corner of page 3 torn",
+      "ring stain on page 3"
+    ],
+    "scan_dpi": 300,
+    "scan_colour_mode": "GRAY-8",
+    "scan_file_format": "PNG"
+  },
+  "artefacts": [
+    {
+      "artefact_id": "A001",
+      "sequence": 1,
+      "role": "cover_photo",
+      "media_type": "image/jpeg",
+      "file_name": "notebook/cover.jpg",
+      "captured_at": "2026-11-19T11:20:00+05:30",
+      "capture_device": {
+        "device_type": "Mobile",
+        "make_model": "Departmental smartphone (ICJS spec)",
+        "serial_number": "R58N91XKQ2",
+        "imei_uin_uid_mac_cloud_id": "IMEI 356938035643809",
+        "software": "e-Sakshya (simulated)",
+        "clock_check": {
+          "reference": "NTP via mobile network",
+          "offset_seconds": 0
+        }
+      },
+      "hashed_on": "capture device",
+      "size_bytes": 326615,
+      "sha256": "fab9701b8a921d5838fc5c7e8b9f7c7a367a53d8f7f6eb5fb03d42dfa0e459f0",
+      "sha3_256": "5cc81ccb54004a39be1579e548cf706a4cedde278c12d942d38470107e06369a",
+      "leaf_salt": "d82e23b3956e8c8e6ef2e9910b2094b81b7e6771cdd1164a8f6ed52fef323121"
+    },
+    {
+      "artefact_id": "A002",
+      "sequence": 2,
+      "role": "edge_photo",
+      "media_type": "image/jpeg",
+      "file_name": "notebook/edge.jpg",
+      "captured_at": "2026-11-19T11:20:30+05:30",
+      "capture_device": {
+        "device_type": "Mobile",
+        "make_model": "Departmental smartphone (ICJS spec)",
+        "serial_number": "R58N91XKQ2",
+        "imei_uin_uid_mac_cloud_id": "IMEI 356938035643809",
+        "software": "e-Sakshya (simulated)",
+        "clock_check": {
+          "reference": "NTP via mobile network",
+          "offset_seconds": 0
+        }
+      },
+      "hashed_on": "capture device",
+      "size_bytes": 128632,
+      "sha256": "3dedfa67c8b545f3b0499be13ad33db9234fc84ab74ec67f419b3a69bf142ce2",
+      "sha3_256": "f859e5ee8a87f36c5d279569bcb48824c8c9f1f89aab50c397472fe6d94788c1",
+      "leaf_salt": "b4f79b6afde88de5c58b9c4e16146b5c20616e82772571d0d07ffdff82603c4a"
+    },
+    {
+      "artefact_id": "A003",
+      "sequence": 3,
+      "role": "page_scan",
+      "media_type": "image/png",
+      "file_name": "notebook/page_001.png",
+      "captured_at": "2026-11-19T15:11:00+05:30",
+      "capture_device": {
+        "device_type": "Flatbed Scanner",
+        "make_model": "A4 flatbed, 600 dpi optical (simulated)",
+        "serial_number": "FBS-0091",
+        "software": "scan utility 4.2 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "dpi": "300",
+        "colour_mode": "GRAY-8",
+        "format": "PNG (lossless)",
+        "page": "1"
+      },
+      "size_bytes": 38947,
+      "sha256": "4b83b1636bb458bd4f1f8ba5cda6339264839be9f7cf3f1233d6f95871e4b7c1",
+      "sha3_256": "da88637f76b49da1e3a7bb7ad421c6c9754f54d28bae21851261b1584b28fcc9",
+      "leaf_salt": "0c883144a5856f419438bb3381d9cd8ce4426b93fd64d1d2411a25fc93b44ed4"
+    },
+    {
+      "artefact_id": "A004",
+      "sequence": 4,
+      "role": "page_scan",
+      "media_type": "image/png",
+      "file_name": "notebook/page_002.png",
+      "captured_at": "2026-11-19T15:12:00+05:30",
+      "capture_device": {
+        "device_type": "Flatbed Scanner",
+        "make_model": "A4 flatbed, 600 dpi optical (simulated)",
+        "serial_number": "FBS-0091",
+        "software": "scan utility 4.2 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "dpi": "300",
+        "colour_mode": "GRAY-8",
+        "format": "PNG (lossless)",
+        "page": "2"
+      },
+      "size_bytes": 41227,
+      "sha256": "c71aed67a84ba93a6fcad3abb8e7961abfdbf2f7bb3490b2663950f2ad099269",
+      "sha3_256": "a25a1eaa39e74f9e2429b8e1e370516ad2db056e6556e07ba4d8ac60525ee640",
+      "leaf_salt": "fa2840c2f60478fe0bd36654e2377aaf871afd803d5895385a60da16676b6a52"
+    },
+    {
+      "artefact_id": "A005",
+      "sequence": 5,
+      "role": "page_scan",
+      "media_type": "image/png",
+      "file_name": "notebook/page_003.png",
+      "captured_at": "2026-11-19T15:13:00+05:30",
+      "capture_device": {
+        "device_type": "Flatbed Scanner",
+        "make_model": "A4 flatbed, 600 dpi optical (simulated)",
+        "serial_number": "FBS-0091",
+        "software": "scan utility 4.2 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "dpi": "300",
+        "colour_mode": "GRAY-8",
+        "format": "PNG (lossless)",
+        "page": "3"
+      },
+      "size_bytes": 38765,
+      "sha256": "6f56721abffa9ba0c1d308ce5ab7534287006bfaed83fa03772821a62427b90b",
+      "sha3_256": "3251cddb7d427f508828498b3328136296b4ebf8571a37b3af2ad5d702221c10",
+      "leaf_salt": "f9e97b6b002771b5ce42cff56e78384646522b5c9536087475fa098b78e24626"
+    },
+    {
+      "artefact_id": "A006",
+      "sequence": 6,
+      "role": "page_scan",
+      "media_type": "image/png",
+      "file_name": "notebook/page_004.png",
+      "captured_at": "2026-11-19T15:14:00+05:30",
+      "capture_device": {
+        "device_type": "Flatbed Scanner",
+        "make_model": "A4 flatbed, 600 dpi optical (simulated)",
+        "serial_number": "FBS-0091",
+        "software": "scan utility 4.2 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "dpi": "300",
+        "colour_mode": "GRAY-8",
+        "format": "PNG (lossless)",
+        "page": "4"
+      },
+      "size_bytes": 36499,
+      "sha256": "9d17cf1286e73ba1fc14b41dad74b9312910db13579a3fdfdeb477fbe0837719",
+      "sha3_256": "08601e27fb44bd9fc62fd3ad8602d3d49dace6247a87ab567eb799165ac05bf7",
+      "leaf_salt": "3d4e9066c4cdde07f02e0b2afee9a8e9aea48e6c80e54d444258be2d2b41983f"
+    },
+    {
+      "artefact_id": "A007",
+      "sequence": 7,
+      "role": "page_scan",
+      "media_type": "image/png",
+      "file_name": "notebook/page_005.png",
+      "captured_at": "2026-11-19T15:15:00+05:30",
+      "capture_device": {
+        "device_type": "Flatbed Scanner",
+        "make_model": "A4 flatbed, 600 dpi optical (simulated)",
+        "serial_number": "FBS-0091",
+        "software": "scan utility 4.2 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "dpi": "300",
+        "colour_mode": "GRAY-8",
+        "format": "PNG (lossless)",
+        "page": "5"
+      },
+      "size_bytes": 38053,
+      "sha256": "76eb8499bda3742aac89288513fb90fec09425786a279f8732c3768498262d2b",
+      "sha3_256": "72e12bbeb71316fdb57ba6f8c63ebf133066405b90c8fe1e8f0275eee911795b",
+      "leaf_salt": "ccdafc63eecb5f4202676dc3a7bbae7686060c9a84351fc26b46318dafe05ca3"
+    },
+    {
+      "artefact_id": "A008",
+      "sequence": 8,
+      "role": "page_scan",
+      "media_type": "image/png",
+      "file_name": "notebook/page_006.png",
+      "captured_at": "2026-11-19T15:16:00+05:30",
+      "capture_device": {
+        "device_type": "Flatbed Scanner",
+        "make_model": "A4 flatbed, 600 dpi optical (simulated)",
+        "serial_number": "FBS-0091",
+        "software": "scan utility 4.2 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "dpi": "300",
+        "colour_mode": "GRAY-8",
+        "format": "PNG (lossless)",
+        "page": "6"
+      },
+      "size_bytes": 43709,
+      "sha256": "b074bdfa579c82afca8858cd4d88aa791ddb49ab30b7d654fc16e2b1ec46bf38",
+      "sha3_256": "f4ecf1f15301772c65fa0955d911def32e65c5074d5ecb44a604b91ba24e1864",
+      "leaf_salt": "277f52ee8c1087b2eec3c65fbe36a637d2560316e24fff6cc00798cd2bbfd07b"
+    }
+  ],
+  "identity_fingerprints": [
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A003"
+      ],
+      "value": "fe97812fc556842a",
+      "match_rule": "hamming<=10"
+    },
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A004"
+      ],
+      "value": "ff7e95d08095c162",
+      "match_rule": "hamming<=10"
+    },
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A005"
+      ],
+      "value": "eb958648955fc196",
+      "match_rule": "hamming<=10"
+    },
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A006"
+      ],
+      "value": "bf90c1c0d43e9769",
+      "match_rule": "hamming<=10"
+    },
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A007"
+      ],
+      "value": "fecc85a2c0c3857b",
+      "match_rule": "hamming<=10"
+    },
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A008"
+      ],
+      "value": "ffdac0e4852a81d5",
+      "match_rule": "hamming<=10"
+    },
+    {
+      "method": "seal-id-exact",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A001"
+      ],
+      "value": "TEB-GJ-0007741",
+      "match_rule": "exact"
+    }
+  ],
+  "integrity": {
+    "hash_algorithms": [
+      "SHA-256",
+      "SHA3-256"
+    ],
+    "merkle_scheme": "RFC6962-SHA256-salted-v1",
+    "merkle_root": "6e8451494a032e3317bc66df35c259c968a35e2fc67832d4f079695e9c514102",
+    "canonicalisation": "RFC8785-JCS"
+  }
+}

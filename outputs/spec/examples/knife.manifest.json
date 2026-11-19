@@ -1,0 +1,176 @@
+{
+  "spec_version": "1.0",
+  "evidence_id": "GJ-GNR-CYBPS-2026-000123-E002",
+  "parent_evidence_id": null,
+  "evidence_class": "PHYSICAL_ITEM",
+  "title": "Kitchen knife recovered beside stain (marker 1)",
+  "description": "Single-edged kitchen knife, steel blade approx. 180 mm, black handle.",
+  "case": {
+    "fir_number": "123/2026",
+    "police_station": "Cyber Crime Police Station Gandhinagar",
+    "district": "Gandhinagar",
+    "state": "Gujarat",
+    "sections_invoked": [
+      "BNS s.318(4)",
+      "BNS s.61(2)"
+    ],
+    "court": "Chief Judicial Magistrate, Gandhinagar"
+  },
+  "collection": {
+    "collected_at": "2026-11-19T10:58:00+05:30",
+    "location": {
+      "description": "Office premises of accused, ground floor, room 2",
+      "address": "Plot 14, GIDC, Gandhinagar",
+      "latitude": "23.2156",
+      "longitude": "72.6369",
+      "position_source": "GNSS"
+    },
+    "collected_by": {
+      "name": "Insp. A. Sharma",
+      "role": "Investigating Officer",
+      "designation": "Police Inspector",
+      "badge_or_employee_id": "GJP-44821",
+      "organisation": "Gujarat Police",
+      "pki_subject": "CN=a.sharma,OU=client,O=police.custodychain.local"
+    },
+    "witnesses": [
+      {
+        "name": "R. Patel",
+        "role": "Independent Witness",
+        "address": "Sector 21, Gandhinagar"
+      },
+      {
+        "name": "M. Desai",
+        "role": "Independent Witness",
+        "address": "Sector 22, Gandhinagar"
+      }
+    ],
+    "legal_basis": "BNSS s.105 search and seizure",
+    "seizure_memo_ref": "GJ-GNR-CYBPS-2026-000123-E020",
+    "av_recording_ref": "GJ-GNR-CYBPS-2026-000123-E010",
+    "condition_on_collection": "Reddish-brown stains on blade; no visible damage"
+  },
+  "packaging": {
+    "container": "rigid weapon tube inside tamper-evident bag",
+    "seal_ids": [
+      "TEB-GJ-0007738"
+    ],
+    "label_id": "QR:GJ-GNR-CYBPS-2026-000123-E002",
+    "sealed_by": {
+      "name": "Insp. A. Sharma",
+      "role": "Investigating Officer",
+      "designation": "Police Inspector",
+      "badge_or_employee_id": "GJP-44821",
+      "organisation": "Gujarat Police",
+      "pki_subject": "CN=a.sharma,OU=client,O=police.custodychain.local"
+    },
+    "sealed_at": "2026-11-19T11:05:00+05:30"
+  },
+  "class_attributes": {
+    "item_category": "edged weapon",
+    "dimensions_mm": {
+      "length": "295",
+      "width": "32",
+      "height": "22"
+    },
+    "mass": {
+      "value": "148.5",
+      "unit": "g"
+    },
+    "material": "steel blade, polymer handle",
+    "colour": "silver / black",
+    "serial_or_make_marks": "none visible",
+    "unique_marks": [
+      "scratch 12 mm long on left face near heel",
+      "chip in handle end cap"
+    ],
+    "scan_3d": {
+      "method": "structured-light",
+      "point_spacing_mm": "0.5",
+      "stated_accuracy_mm": "0.1"
+    },
+    "expected_changes": [
+      "swabbing of stains at FSL",
+      "possible removal of trace material"
+    ]
+  },
+  "artefacts": [
+    {
+      "artefact_id": "A001",
+      "sequence": 1,
+      "role": "scan_3d",
+      "media_type": "model/ply",
+      "file_name": "knife/reference_scan.ply",
+      "captured_at": "2026-11-19T13:40:00+05:30",
+      "capture_device": {
+        "device_type": "3D Scanner",
+        "make_model": "Structured-light handheld scanner (simulated)",
+        "serial_number": "SL3D-2207",
+        "software": "scan suite 3.1 (simulated)"
+      },
+      "hashed_on": "police station designated desktop",
+      "capture_parameters": {
+        "points": "16000",
+        "units": "mm",
+        "format": "PLY ASCII"
+      },
+      "size_bytes": 331150,
+      "sha256": "58551adc768150f6848f3d65450c3e9d69917cdb3187f4b9c9b7e115db1c0330",
+      "sha3_256": "7fa6745f2d7288a954d5bb9fb275e4f2e003bed64e89d6c6e602a0aadb45b4c5",
+      "leaf_salt": "d82e23b3956e8c8e6ef2e9910b2094b81b7e6771cdd1164a8f6ed52fef323121"
+    },
+    {
+      "artefact_id": "A002",
+      "sequence": 2,
+      "role": "closeup_photo",
+      "media_type": "image/jpeg",
+      "file_name": "photo/IMG_0001.jpg",
+      "captured_at": "2026-11-19T10:42:05+05:30",
+      "capture_device": {
+        "device_type": "Mobile",
+        "make_model": "Departmental smartphone (ICJS spec)",
+        "serial_number": "R58N91XKQ2",
+        "imei_uin_uid_mac_cloud_id": "IMEI 356938035643809",
+        "software": "e-Sakshya (simulated)",
+        "clock_check": {
+          "reference": "NTP via mobile network",
+          "offset_seconds": 0
+        }
+      },
+      "hashed_on": "capture device",
+      "size_bytes": 310932,
+      "sha256": "0ee550034602fa2da9f6716c4cead703e14cb47b3dcead1cbfda0eb1bf68b605",
+      "sha3_256": "6216222ac8cde0894e1492f1788e141bd870f889525e036614373c0d942b5571",
+      "leaf_salt": "b4f79b6afde88de5c58b9c4e16146b5c20616e82772571d0d07ffdff82603c4a"
+    }
+  ],
+  "identity_fingerprints": [
+    {
+      "method": "mesh-icp-rms",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A001"
+      ],
+      "value": "58551adc768150f6848f3d65450c3e9d69917cdb3187f4b9c9b7e115db1c0330",
+      "match_rule": "rms_mm<=0.60 and max_mm<=3.00"
+    },
+    {
+      "method": "seal-id-exact",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A002"
+      ],
+      "value": "TEB-GJ-0007738",
+      "match_rule": "exact"
+    }
+  ],
+  "integrity": {
+    "hash_algorithms": [
+      "SHA-256",
+      "SHA3-256"
+    ],
+    "merkle_scheme": "RFC6962-SHA256-salted-v1",
+    "merkle_root": "bff2e3d7ce1a560246efde52b91d5a82cf858e53c460e5b240c8300a22d6a399",
+    "canonicalisation": "RFC8785-JCS"
+  }
+}

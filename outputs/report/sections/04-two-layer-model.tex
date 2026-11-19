@@ -1,0 +1,129 @@
+\section{The two-layer fingerprinting model}
+\label{sec:twolayer}
+
+\subsection{Terms}
+\begin{description}[style=nextline,leftmargin=1.2em]
+  \item[Evidence item.] The thing seized or produced: a knife, a notebook, a phone, a CCTV export, a blood swab, a seizure memo. It has a globally unique \code{evidence\_id} of the form \code{GJ-GNR-CYBPS-2026-000123-E004} (state, district, unit, year, case sequence, item sequence).
+  \item[Artefact.] A file that documents or constitutes the item: a photograph, a page scan, a 3D scan, a video segment, a forensic image, a provider's data package, a PDF. Artefacts are what we hash.
+  \item[Manifest.] The canonical, schema-validated JSON record of one item. It contains the case and collection facts, packaging and seals, class-specific attributes, every artefact with its hashes and capture details, and the identity-fingerprint references (\cref{app:spec}).
+  \item[Ledger record.] What is written on-chain: \code{evidence\_id}, class, \code{manifest\_sha256}, \code{merkle\_root}, artefact count, and the spec version. This is followed by append-only custody events.
+\end{description}
+
+\subsection{Layer 1: integrity (exact)}
+For every artefact $a$ we compute $\shatwo(a)$ and $\shathree(a)$ over the exact bytes produced by the capture device, before the file is opened in any editor, renamed by software that rewrites it, or transcoded. Verification is exact:
+\[
+\mathrm{Verify}_{L1}(a, h) \;=\; \big[\,\shatwo(a) = h\,\big].
+\]
+L1 answers \emph{has this record changed since it was fingerprinted?} It has no false matches, short of breaking \shatwo{}, and no tolerance: one flipped bit is a mismatch. L1 applies to every artefact of every class, including born-digital evidence (CCTV, extractions, cloud data). For born-digital evidence the artefact \emph{is} the evidence.
+
+\subsection{Layer 2: identity (tolerant)}
+Physical objects, and the visual content of images, cannot be compared byte for byte, because every new capture differs in pose, light, noise and sampling. That is the observation that \enquote{no two photographs are ever the same}. It is correct, and it is \emph{not a problem}, because we never need to reproduce a reference capture:
+
+\begin{keypoint}[Resolving \enquote{no two photographs are the same}]
+The reference photographs, scans and 3D scans taken at seizure are themselves artefacts. They are frozen by Layer~1 at the moment of capture, and that frozen record is what is compared against later. When the item is later re-examined (on receipt at the FSL, before court), \emph{new} captures are taken. These new captures are \emph{also} frozen by Layer~1, and they are compared with the frozen references by a declared tolerant method. The comparison method, its version, the score, the threshold and the L1 hashes of the new captures are recorded in a \code{VERIFY\_IDENTITY} event. The comparison itself is therefore auditable and repeatable by anyone, including a defence expert.
+\end{keypoint}
+
+Formally, for a fingerprint extractor $\varphi$, distance $d$ and threshold $\tau$ declared in the manifest:
+\[
+\mathrm{Verify}_{L2}(Q, R) \;=\; \big[\, d(\varphi(Q), \varphi(R)) \le \tau \,\big],
+\]
+where $R$ are the reference artefacts and $Q$ the new (query) artefacts. Unlike L1, L2 has two error rates. The \emph{false match rate} (FMR) is the rate at which a different or altered item is accepted. The \emph{false non-match rate} (FNMR) is the rate at which the same item is rejected. $\tau$ trades one against the other and must be calibrated on realistic data for each method and evidence type. The thresholds used in this document are illustrative only (\cref{sec:limits}). An L2 result is \emph{evidence of identity} to be weighed by an examiner, never proof.
+
+L2 methods by evidence type:
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\toprule
+Method & Use & Rule (illustrative) \\
+\midrule
+\code{seal-id-exact}, \code{label-id-exact} & Tamper-evident seal numbers, barcodes and QR or RFID labels: an exact identifier physically bound to the package. The strongest and cheapest identity check, as long as the seal is intact. & exact \\
+\code{serial-exact} & Manufacturer serials, IMEI, chassis numbers & exact \\
+\code{phash-dct-64} & Page scans, photographs of flat items, frames & $d_H \le 10$ \\
+\code{mesh-icp-rms} & 3D scans of objects (weapons, tools, footwear) & RMS $\le$ \KnifeRuleRms{} mm, max $\le$ \KnifeRuleMax{} mm \\
+\code{measurement-tolerance} & Mass, dimensions & stated instrument tolerance \\
+\code{keypoint-set} & Distinctive surface features matched by local descriptors (scratches, tool marks); future work & method-specific \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Binding the physical item to its digital record}
+L1 and L2 operate on files; the remaining link is between the physical package and the record. Three mechanisms provide it:
+\begin{enumerate}
+  \item a \textbf{tamper-evident container} whose unique seal number is recorded in the manifest and re-read, with a photograph, at every transfer (\code{seal\_ids\_observed}, \code{seal\_intact});
+  \item a \textbf{printed label} (QR code, optionally RFID) carrying the \code{evidence\_id}, so that scanning the package retrieves the ledger record and manifest;
+  \item \textbf{continuous A/V recording of the seizure} (BNSS s.105~\cite{bnss2023}). The recording is itself an evidence item (\code{AV\_RECORDING}) referenced from each seized item's manifest, and it shows the item being packed and sealed.
+\end{enumerate}
+
+\subsection{The manifest and what goes on-chain}
+\Cref{fig:flow} shows the data flow. The manifest is built from the captures and validated against the schema. Its Merkle root is computed over the salted artefact leaves and stored inside it, and the manifest is then canonicalised and hashed. The resulting pair \code{(manifest\_sha256, merkle\_root)} is submitted in the \code{REGISTER} event.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small,
+  box/.style={draw=ink, rounded corners=2pt, align=center, minimum height=11mm, text width=36mm, inner sep=3pt, fill=white},
+  phys/.style={box, fill=accent!10, draw=accent},
+  chain/.style={box, fill=ink!10},
+  arr/.style={-{Latex[length=2mm]}, draw=ink},
+  ltwo/.style={-{Latex[length=2mm]}, draw=accent, dashed, thick}]
+  % column 1: the physical world
+  \node[phys] (item)  at (0, 0)    {Physical item\\\scriptsize notebook, knife, phone};
+  \node[phys] (later) at (0,-3.9)  {Same item, later\\\scriptsize on receipt at FSL, before court};
+  \node[box]  (q)     at (0,-6.0)  {New captures $Q$\\\scriptsize themselves L1-hashed};
+  % column 2: files
+  \node[box]  (cap)   at (5.5, 0)  {Captures = artefacts\\\scriptsize photos, page scans, 3D scan, video, image};
+  \node[box, text width=26mm] (mr) at (6.0,-1.95) {Salted Merkle root\\\scriptsize RFC 6962};
+  \node[box]  (store) at (5.5,-3.9) {Encrypted off-chain store\\\scriptsize files (incl.\ reference captures $R$) + manifest};
+  % column 3: integrity and ledger
+  \node[box]  (l1)    at (11.0, 0)  {\textbf{L1} per artefact\\\scriptsize \shatwo{} + \shathree{}};
+  \node[box]  (man)   at (11.0,-1.95) {Manifest $M$\\\scriptsize case, collection, seals, class attributes, artefacts};
+  \node[chain](led)   at (11.0,-3.9) {\textbf{Ledger}\\\scriptsize REGISTER: $\shatwo(\mathrm{JCS}(M))$, Merkle root};
+  % L1 path
+  \draw[arr] (item) -- (cap);
+  \draw[arr] (cap) -- (l1);
+  \draw[arr] (l1) -- (man);
+  \draw[arr] (l1.south west) -- (mr.north east);
+  \draw[arr] (mr) -- (man);
+  \draw[arr] (man) -- (led);
+  \draw[arr] ([xshift=3mm]cap.south west) -- ([xshift=3mm]store.north west);
+  % L2 path
+  \draw[arr] (item) -- (later);
+  \draw[arr] (later) -- (q);
+  \draw[ltwo] (q.east) -| node[pos=0.25, below, font=\scriptsize, align=center]{\textbf{L2}: compare $Q$ with $R$} (store.south);
+  \draw[ltwo] (store.east) -- node[above, font=\scriptsize]{VERIFY\_IDENTITY} (led.west);
+\end{tikzpicture}
+\caption{Data flow. Solid: Layer-1 integrity path from capture to ledger. Dashed: Layer-2 identity check of the same item later, whose result is itself recorded on the ledger.}
+\label{fig:flow}
+\end{figure}
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}lXX@{}}
+\toprule
+ & On-chain (every peer of the channel) & Off-chain (encrypted evidence store) \\
+\midrule
+Item & \code{evidence\_id}, class, parent id, \code{manifest\_sha256}, \code{merkle\_root}, artefact count, spec version & Full manifest (case facts, persons, locations, seals, attributes, per-artefact hashes and salts) \\
+Files & nothing & All artefacts: originals (\enquote{master negative}) and working copies \\
+Events & type, reason, references, seal readings, verification results, hashes of attachments; actor and time from the transaction & Attachments (receipts, FSL reports, orders) \\
+Personal data & none in clear (witness names, addresses and accused details stay in the manifest) & manifest, access-controlled \\
+\bottomrule
+\end{tabularx}
+\caption{What is stored where. Only fingerprints and custody metadata are replicated on the ledger (R7).}
+\label{tab:onoff}
+\end{table}
+
+Verification by a third party (R8) needs only the file(s), the manifest and the ledger record:
+\begin{enumerate}[nosep]
+  \item recompute each artefact's \shatwo{}/\shathree{} and compare with the manifest;
+  \item recompute the Merkle root \emph{from the files} and compare with the manifest;
+  \item recompute $\shatwo(\mathrm{JCS}(M))$ and compare the manifest hash and root with the ledger record.
+\end{enumerate}
+If a single artefact must be disclosed without the rest (for example one page of a notebook), it is accompanied by its salt and an inclusion proof against the ledger's Merkle root (\cref{tab:proof}).
+
+\subsection{The window of vulnerability}
+\label{sec:window}
+Integrity protection begins only when a hash is \emph{committed somewhere the adversary cannot change}. Two intervals matter: capture $\to$ first hash, and first hash $\to$ ledger anchoring. The design minimises both:
+\begin{itemize}
+  \item hash on the capture device immediately after capture. This is what the SOP's flowchart requires (\enquote{obtain hash value of A-V file}) and what e-Sakshya provides~\cite{sopbnss};
+  \item record \code{hashed\_at} and \code{hashed\_on} for every artefact, so the window is visible to a court;
+  \item when the device is offline, queue the hashes, sign them with the device or officer key, and submit them as soon as connectivity returns. The ledger timestamp then bounds the window from above;
+  \item for removable media, follow the SOP: sealed envelope to the expert, hashed on opening in the presence of the officer, never opened in an editor before hashing~\cite{sopbnss}.
+\end{itemize}

@@ -1,0 +1,129 @@
+\section{Per-class fingerprinting procedures}
+\label{sec:classes}
+
+Each evidence class is specified below under the same headings. The complete list of mandatory and optional fields is in \cref{app:spec}; here we explain \emph{what is hashed and why}. The two classes raised in discussion, a crime-scene photograph and a recovered notebook, are treated first and in the most detail, because they show the contrast clearly. A photograph \emph{is} its file. A notebook is a physical object that can only be represented by files.
+
+\newcommand{\cardrow}[2]{\textbf{#1} & #2 \\ \addlinespace[2pt]}
+\newenvironment{classcard}{\par\smallskip\noindent\small\tabularx{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.7cm}X@{}}\toprule}{\bottomrule\endtabularx\par\medskip}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Crime-scene photograph (\code{SCENE\_PHOTOGRAPH})}
+\label{sec:cls-photo}
+A digital photograph is born-digital: the file produced by the camera is the primary evidence, and nothing needs to be \enquote{fingerprinted from the real world}. The exact bytes are hashed.
+
+\begin{classcard}
+\cardrow{Unit of record}{One photograph = one evidence item (frame), grouped by \code{photo\_series\_id}. The series follows the SOP's general-to-specific sequence: overall, mid-range and close-up views, with scale~\cite{sopbnss}.}
+\cardrow{Mandatory inputs}{Case, collection (time, GNSS position, photographer, witnesses, legal basis), \code{view}, \code{frame\_number}, \code{scale\_present}, subject, original format, capture device with clock check.}
+\cardrow{Artefacts}{The original file exactly as written by the device (JPEG/HEIC/RAW, EXIF intact).}
+\cardrow{L1 (what is hashed)}{The \emph{entire original file}, pixels \emph{and} metadata, on the device immediately after capture. Hashing the file, rather than decoded pixels, means a change to the EXIF capture time is detected as well (\cref{tab:photo}).}
+\cardrow{L2}{pHash of the image, used to recognise the same content when it resurfaces as a re-encoded copy, screenshot or print scan, and to detect a near-duplicate presented as a different photograph. Never used for integrity.}
+\cardrow{Derived artefacts}{Any enhancement (crop, brightness, enlargement) is a \emph{new} artefact with \code{parent\_artefact\_id} set and its own hashes; the original stays in the manifest. The SOP requires enhancements to be documented and stored separately~\cite{sopbnss}.}
+\cardrow{Pitfalls}{Opening the file in an editor or gallery app that rewrites metadata; messaging apps that recompress; deleting \enquote{bad} frames (the SOP forbids deleting photographically faulty images, which also keeps frame numbering continuous); an unsynchronised device clock (record \code{clock\_check}).}
+\end{classcard}
+
+\paragraph{Optional strengthening.} Capture applications that sign the image and its metadata at capture with a device key (for example under the C2PA content-credential specification~\cite{c2pa}) shorten the window of \cref{sec:window} to zero and bind the image to a specific enrolled device. This complements L1 and does not replace it.
+
+% ---------------------------------------------------------------------------------------
+\subsection{Recovered notebook or other physical document (\code{PHYSICAL\_DOCUMENT})}
+\label{sec:cls-notebook}
+A notebook cannot be hashed. Its integrity and identity rest on a \emph{reference capture set} made at seizure (or, at the latest, before it leaves the first custodian) and on the seal.
+
+\begin{classcard}
+\cardrow{Unit of record}{One document = one item. Each \emph{side} that is scanned is one \code{page\_scan} artefact with \code{sequence} = page number; cover and edge photographs are additional artefacts.}
+\cardrow{Mandatory inputs}{Document type, \code{page\_count}, leaf count, dimensions, binding, writing media, \code{distinguishing\_features} (at least one), scan resolution ($\ge$ 300 dpi) and colour mode, seal and label identifiers.}
+\cardrow{Artefacts}{(i) cover and edge photographs with scale; (ii) every side scanned flat at fixed dpi, \emph{lossless} PNG or TIFF, in page order, including blank sides; (iii) photograph of the sealed bag.}
+\cardrow{L1 (what is hashed)}{Each scan file and photograph. The Merkle tree over the artefacts \emph{in page order} binds the ordered set: removing, inserting or substituting a page changes the root, and verification names the exact artefact (\cref{sec:worked}).}
+\cardrow{L2}{(a) Seal number (exact) and seal-intact photograph at every transfer. (b) pHash of every page: on receipt at the FSL the pages are re-scanned and compared page by page. A substituted or re-written page fails, and a missing page shows up as a count mismatch and an unmatched reference. (c) Distinguishing features (tears, stains) on re-inspection.}
+\cardrow{Limits}{Page-level pHash detects substitution and gross alteration of a page, but not a few added strokes or an altered digit. Such questions belong to questioned-document examination (ink, indentation, handwriting) by an expert, which the reference scans support but do not replace.}
+\cardrow{Pitfalls}{Lossy JPEG scans (re-compression changes bytes and blurs fine detail); auto-deskew or \enquote{enhance} options of scanner software (disable them and record the settings); scanning only pages that look relevant.}
+\end{classcard}
+
+\begin{keypoint}[Photograph vs.\ notebook in one line]
+For the photograph, \emph{the file is the evidence} and L1 alone answers the integrity question. For the notebook, \emph{the files represent the evidence}: L1 freezes the representation, and L2 plus the seal links the physical notebook to it at each later stage.
+\end{keypoint}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Search, seizure and statement recordings (\code{AV\_RECORDING})}
+\begin{classcard}
+\cardrow{Legal context}{Mandatory for search and seizure (BNSS s.105, s.185(2)) and, once notified, for scene-of-crime processing in offences punishable with seven years or more (s.176(3)); optional or conditional for statements~\cite{bnss2023,sopbnss}.}
+\cardrow{Mandatory inputs}{Purpose, legal provision, start and end time, \code{media\_blank\_confirmed}, segment $n$ of $m$, codec, time forwarded to the Magistrate.}
+\cardrow{L1}{Each segment file as written by the recorder, hashed on the device (or on first opening of the sealed card in the expert's presence). For long recordings, a \code{chunk\_merkle\_root} over fixed-size chunks localises any later corruption to a few seconds of footage.}
+\cardrow{Continuity}{The SOP requires recording without breaks; when a card is changed, the change is filmed by a second recorder. Each segment is a separate artefact with \code{sequence}, and \code{continuity\_device\_ref} points to the second recorder's item.}
+\cardrow{Copies for court}{The SOP's \enquote{master negative} and \enquote{mirror image} are byte copies, so their hashes \emph{equal} the original's. Equality of hashes is the proof that the copy produced is the recording made~\cite{sopbnss}.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{CCTV export (\code{CCTV\_EXPORT})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{System make, model and serial number; owner or operator (who signs Part A of the s.63 certificate); camera IDs; footage start and end; \code{dvr\_clock\_offset\_seconds}; export method.}
+\cardrow{Artefacts}{The export file(s) in native format, the vendor's player (if proprietary), the export log, and a photograph of the DVR clock next to a reference clock.}
+\cardrow{L1}{Every exported file and the player binary, hashed at the moment of export on the export medium.}
+\cardrow{Notes}{DVR clocks are often wrong by minutes; the measured offset is recorded, not \enquote{corrected} in the file. Transcoding to MP4 for viewing creates a derived artefact; the native export remains the reference.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{General physical item (\code{PHYSICAL\_ITEM})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{Item category, dimensions, material, at least one unique mark, 3D-scan method, point spacing and stated accuracy (or the reason it was not performed), mass where measurable, expected changes (e.g.\ swabbing).}
+\cardrow{Artefacts}{Photographs in a defined set of views with scale and colour reference; close-ups of unique marks; a 3D scan (structured light, laser or photogrammetry) exported as a mesh or point cloud in millimetres; a measurement record.}
+\cardrow{L1}{Every photograph, the 3D-scan file and the measurement record.}
+\cardrow{L2}{Seal number (exact); 3D deviation after ICP alignment (symmetric RMS and maximum against declared thresholds); serial numbers and unique marks; mass within instrument tolerance.}
+\cardrow{Why 3D}{A photograph fixes appearance from one viewpoint; a 3D scan fixes geometry independently of viewpoint and lighting, so damage, substitution by a look-alike, or material removal can be measured (\cref{tab:knife}).}
+\cardrow{Expected change}{Forensic tests legitimately alter items (swabbing, test-firing, sectioning). Each such step is an \code{EXAMINE} event; a new reference capture is taken afterwards and registered as a \code{DERIVE}d state, so later comparisons are made against the right reference.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Biological and trace samples (\code{BIO\_TRACE\_SAMPLE})}
+\begin{classcard}
+\cardrow{Specific problem}{The sample itself is consumed or changed by analysis and cannot be re-identified by its appearance. Its identity is carried by its \emph{container}.}
+\cardrow{Mandatory inputs}{Sample type, collection method, container type, \code{container\_barcode}, quantity, storage condition (and temperature-log reference), biohazard flag.}
+\cardrow{Artefacts}{Photographs of the sample in situ and of the sealed, labelled container; the temperature log for cold-chain items; laboratory reports.}
+\cardrow{L1}{Photographs, temperature log, reports.}
+\cardrow{L2}{Barcode and seal exact match, seal-intact photograph on receipt. Splitting into aliquots creates child items (\code{DERIVE}) with their own barcodes.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Seized digital device (\code{DIGITAL\_DEVICE})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{The device fields of the BSA Schedule certificate (device type, make and model, colour, serial number, IMEI/UIN/UID/MAC); power state at seizure; isolation (Faraday bag, airplane mode); lock status. The credential itself is never stored in the manifest.}
+\cardrow{Artefacts}{Photographs of the device and its screen state and labels; the seizure A/V reference.}
+\cardrow{L1/L2}{The device is a physical item: L1 covers its photographs and L2 its serial and IMEI (exact) plus the seal. Its \emph{data} is fingerprinted separately when it is acquired (next two classes).}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Forensic image of storage media (\code{FORENSIC\_IMAGE})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{Parent device (\code{parent\_evidence\_id}), acquisition tool and exact version, write blocker (make, model, serial), image format, source size, \code{source\_stream\_sha256}, \code{verification\_sha256}, start and end, examiner.}
+\cardrow{L1}{Two distinct hashes must agree: the \shatwo{} of the bit stream \emph{read from the source} during acquisition, and the \shatwo{} recomputed from the finished image. Container files (E01 segments, AFF4) are additionally hashed as artefacts. Tool-embedded \textsc{md5}/\textsc{sha-1} values are kept for cross-reference only.}
+\cardrow{Notes}{Solid-state media with TRIM, wear levelling or live systems may never reproduce the same source hash on re-acquisition. The image, not the device, is then the integrity anchor, which is why the acquisition-time hash must be committed immediately. Chunk-level hashes localise later corruption of working copies (\cref{tab:disk}).}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Mobile extraction (\code{MOBILE\_EXTRACTION})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{Parent device, tool and version, extraction type (logical, file system, full file system, physical), device state, start and end, examiner.}
+\cardrow{L1}{The extraction package and the tool's report, as produced. A phone is a live system: a second extraction will \emph{never} hash identically, so the hashes anchor this extraction, not the phone.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Cloud and social-media data (\code{CLOUD\_DATA})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{Provider, account identifiers, legal process reference, date range, time of receipt, delivery method, provider-supplied hash or signature if any, capture format.}
+\cardrow{L1}{The package exactly as received, hashed on receipt; any provider hash is recorded and checked. Web captures should be preserved as WARC with capture time rather than as screenshots.}
+\cardrow{Notes}{Part A of the s.63 certificate for such data concerns the provider's systems; the record of exactly what was received, and when, is what this system can guarantee.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{IoT and system logs (\code{IOT\_LOG})}
+\begin{classcard}
+\cardrow{Mandatory inputs}{Source system, device IDs, log start and end, time-synchronisation status, at-source integrity (hash-chained, signed, append-only store, none), export method, format.}
+\cardrow{L1}{The exported log files. If the source hash-chains or signs its entries, the chain head is recorded so that completeness, not just integrity, of the export can be checked. Edge-side collection with on-chain anchoring, as in Chain4ensic~\cite{pezzoni2025}, reduces the window further.}
+\end{classcard}
+
+% ---------------------------------------------------------------------------------------
+\subsection{Procedural documents (\code{PROCEDURAL\_DOCUMENT})}
+\begin{classcard}
+\cardrow{Scope}{Seizure memo, panchnama, chain-of-custody form, forwarding letter, FSL request and report, BSA s.63 certificate (Parts A and B), case-diary extracts, court orders.}
+\cardrow{L1}{Born-digital PDFs: the file, preferably carrying an electronic signature under the IT Act~\cite{itact2000}. Paper: scanned exactly like a physical document (lossless, all pages).}
+\cardrow{Role}{These documents tie the procedure to the evidence. Each item's manifest references the seizure memo (\code{seizure\_memo\_ref}) and each document references the items it covers (\code{refers\_to\_evidence\_ids}), so the cross-references are themselves hash-protected.}
+\end{classcard}

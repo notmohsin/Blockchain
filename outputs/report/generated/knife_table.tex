@@ -1,0 +1,10 @@
+\begin{tabular}{@{}p{0.46\linewidth}cccc@{}}
+\toprule
+Query scan compared with the reference scan & RMS (mm) & P95 (mm) & Max (mm) & L2 verdict\\
+\midrule
+Same knife, re-scanned at FSL (new pose, new sampling, 0.15 mm noise) & 0.568 & 0.965 & 2.386 & MATCH\\
+Same knife after an 8 x 5 mm nick appeared in the edge & 0.579 & 0.975 & 4.444 & \textbf{NO MATCH}\\
+Same knife with 6 mm of the tip broken off & 0.570 & 0.964 & 5.024 & \textbf{NO MATCH}\\
+Look-alike knife, blade 6 mm longer & 0.581 & 0.982 & 4.365 & \textbf{NO MATCH}\\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://custodychain.local/spec/1.0/custody-event.schema.json",
+  "title": "CustodyChain Custody Event v1.0",
+  "description": "One append-only lifecycle event about an evidence item, as submitted to the chaincode. The actor identity, organisation (MSP) and timestamp are NOT client inputs: the chaincode takes them from the transaction's signing certificate and the transaction timestamp. Events are never updated or deleted; corrections are new events that reference the corrected one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_version", "evidence_id", "event_type", "reason"],
+  "properties": {
+    "spec_version": { "const": "1.0" },
+    "evidence_id": { "type": "string", "pattern": "^[A-Z]{2}-[A-Z]{2,5}-[A-Z0-9]{2,8}-[0-9]{4}-[0-9]{6}-E[0-9]{3}$" },
+    "event_type": {
+      "enum": [
+        "REGISTER", "SEAL", "TRANSFER_INITIATE", "TRANSFER_ACCEPT", "TRANSFER_REJECT",
+        "ACCESS", "EXAMINE_START", "EXAMINE_END", "DERIVE", "VERIFY_INTEGRITY", "VERIFY_IDENTITY",
+        "RESEAL", "SUBMIT_COURT", "RETURN", "ARCHIVE", "DISPOSE", "CORRECTION"
+      ]
+    },
+    "reason": { "type": "string", "minLength": 3, "description": "Why the event happened (the 'Why' of 5W1H), e.g. court order number, FSL request number." },
+    "location": { "type": "string" },
+    "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "REGISTER, DERIVE: SHA-256 of the RFC 8785 canonical manifest." },
+    "merkle_root": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "REGISTER, DERIVE: salted RFC 6962 Merkle root over the manifest's artefacts." },
+    "to_org_msp": { "type": "string", "description": "TRANSFER_INITIATE: receiving organisation, e.g. FSLMSP." },
+    "to_custodian_subject": { "type": "string", "description": "TRANSFER_INITIATE: X.509 subject of the intended receiving custodian." },
+    "transfer_ref": { "type": "string", "description": "TRANSFER_ACCEPT/REJECT: tx id of the matching TRANSFER_INITIATE." },
+    "seal_ids_observed": { "type": "array", "items": { "type": "string" }, "description": "SEAL, TRANSFER_ACCEPT, RESEAL, VERIFY_IDENTITY: seal numbers read on the package." },
+    "seal_intact": { "type": "boolean", "description": "TRANSFER_ACCEPT, VERIFY_IDENTITY: seal condition on receipt." },
+    "child_evidence_id": { "type": "string", "description": "DERIVE: the new item (forensic image, aliquot, extraction, enhanced copy)." },
+    "verification": {
+      "description": "VERIFY_INTEGRITY / VERIFY_IDENTITY result.",
+      "type": "object", "additionalProperties": false, "required": ["method", "result"],
+      "properties": {
+        "method": { "type": "string", "description": "e.g. 'sha256-recompute', 'phash-dct-64', 'mesh-icp-rms', 'seal-id-exact'" },
+        "method_version": { "type": "string" },
+        "result": { "enum": ["MATCH", "NO_MATCH", "INCONCLUSIVE"] },
+        "score": { "type": "string", "description": "Decimal string, e.g. Hamming distance or RMS in mm." },
+        "threshold": { "type": "string" },
+        "query_artefact_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "description": "L1 hashes of the new captures used for the comparison (stored off-chain like any artefact)." }
+      }
+    },
+    "attachments_sha256": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "description": "Hashes of documents created by this event (receipt photo, FSL report, court order)." },
+    "corrects_event_tx": { "type": "string", "description": "CORRECTION: tx id of the event being corrected." }
+  },
+  "allOf": [
+    { "if": { "properties": { "event_type": { "enum": ["REGISTER", "DERIVE"] } } }, "then": { "required": ["manifest_sha256", "merkle_root"] } },
+    { "if": { "properties": { "event_type": { "const": "DERIVE" } } }, "then": { "required": ["child_evidence_id"] } },
+    { "if": { "properties": { "event_type": { "const": "TRANSFER_INITIATE" } } }, "then": { "required": ["to_org_msp", "to_custodian_subject"] } },
+    { "if": { "properties": { "event_type": { "enum": ["TRANSFER_ACCEPT", "TRANSFER_REJECT"] } } }, "then": { "required": ["transfer_ref", "seal_ids_observed", "seal_intact"] } },
+    { "if": { "properties": { "event_type": { "enum": ["VERIFY_INTEGRITY", "VERIFY_IDENTITY"] } } }, "then": { "required": ["verification"] } },
+    { "if": { "properties": { "event_type": { "const": "CORRECTION" } } }, "then": { "required": ["corrects_event_tx"] } }
+  ]
+}

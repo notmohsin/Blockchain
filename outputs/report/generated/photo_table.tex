@@ -1,0 +1,13 @@
+\begin{tabular}{@{}p{0.30\linewidth}p{0.25\linewidth}cc>{\centering\arraybackslash}p{0.11\linewidth}@{}}
+\toprule
+Variant of \texttt{IMG\_0001} & SHA-256 (first 16 hex) & L1 equal? & pHash $d_H$ & L2 ($d_H\le 10$)\\
+\midrule
+Original file as produced by the device & \texttt{0ee55003\allowbreak{}4602fa2d\ldots} & yes & 0 & same\\
+Byte-for-byte copy (e.g. to the master-negative disk) & \texttt{0ee55003\allowbreak{}4602fa2d\ldots} & yes & 0 & same\\
+Opened and re-saved as JPEG (same quality setting) & \texttt{f769b244\allowbreak{}9ec51305\ldots} & \textbf{no} & 0 & same\\
+Only the EXIF date/time edited; pixels untouched & \texttt{c5c6eeca\allowbreak{}12251f4f\ldots} & \textbf{no} & 0 & same\\
+Second photograph of the same scene, seconds later & \texttt{81e30dfc\allowbreak{}25a89d1d\ldots} & \textbf{no} & 0 & same\\
+Original with the knife digitally removed & \texttt{2e2864e3\allowbreak{}1f9b783b\ldots} & \textbf{no} & 0 & same\\
+Photograph of a different scene & \texttt{90ed56c4\allowbreak{}0568ae5a\ldots} & \textbf{no} & 28 & different\\
+\bottomrule
+\end{tabular}

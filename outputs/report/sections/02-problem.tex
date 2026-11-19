@@ -1,0 +1,62 @@
+\section{The problem: what must be protected, against whom}
+\label{sec:problem}
+
+\subsection{The evidence lifecycle}
+Evidence passes through identification and collection, packaging and sealing, transport, storage, forensic examination (which may create \emph{derived} evidence such as a forensic image or an aliquot of a sample), presentation in court, and finally return, archival or disposal. At every transition there must be a record of what the item was, who held it, what was done to it and why, so that the item produced in court can be shown to be the item that was collected, in a known condition~\cite{iso27037,sopbnss}. \Cref{tab:stages} restates the project brief's stage analysis and adds the control this design contributes at each stage.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l>{\raggedright}p{2.6cm}>{\raggedright}p{2.5cm}>{\raggedright}p{2.6cm}X@{}}
+\toprule
+Stage & What must be protected & Threat & Existing mechanism & Contribution of this design \\
+\midrule
+Collection & Original evidence and its metadata & Fabrication, alteration, omission & Seizure memo, witnesses, A/V recording (BNSS s.105) & Hash at capture; manifest binds captures, seals, witnesses and the A/V recording; anchored within minutes \\
+Storage & Evidence and its record & Tampering, deletion, substitution & Malkhana registers, secure storage & Off-chain store verified against ledger hashes; append-only events \\
+Transfer & Custody record & Unauthorised handling, gaps & Paper chain-of-custody form & Two-phase transfer (initiate and accept) signed by both custodians' certificates; seal state recorded \\
+Examination & Original and derived evidence & Modification, undocumented processing & Hashing, lab notes & Derived items get their own manifests linked to the parent; verify-identity events on receipt \\
+Court & Authenticity & Disputes over provenance & BSA s.63 certificate & Certificate fields are generated from the manifest; independent re-verification against the ledger \\
+Archival & Long-term integrity & Loss, bit-rot, algorithm ageing & Archival systems & Dual hashes (\shatwo{} and \shathree{}); periodic re-verification events; algorithm agility \\
+\bottomrule
+\end{tabularx}
+\caption{Lifecycle stages, threats and controls (extends the project brief).}
+\label{tab:stages}
+\end{table}
+
+\subsection{Adversaries}
+The design must hold against the following parties.
+\begin{description}[style=nextline,leftmargin=1.2em]
+  \item[A1: Dishonest custodian (insider).] A person with legitimate access who substitutes an item, edits a file, back-dates a record or quietly removes a page. This is the most realistic threat.
+  \item[A2: Dishonest agency administrator.] Someone controlling one organisation's infrastructure, including its ledger node, who tries to rewrite, reorder or censor history.
+  \item[A3: External attacker.] Compromises a server or storage system.
+  \item[A4: Opposing party in court.] Not malicious toward the system, but motivated to challenge provenance. The system must give a judge something \emph{independently verifiable} rather than \enquote{trust our database}.
+\end{description}
+
+\subsection{What a hash proves, and what it does not}
+\label{sec:whathashproves}
+A cryptographic hash of a file proves exactly one thing: the file presented now is bit-for-bit identical to the file that was hashed earlier. As Burri et al.\ put it, the hash value alone \enquote{does not prove that digital evidence is the same as when it was obtained, only that the contents has not been modified since the time when the hash was calculated}~\cite{burri2020}. Three consequences follow, and the rest of the design is built around them.
+\begin{enumerate}
+  \item \textbf{The time of hashing matters.} Anything done to a file before it is hashed is invisible. The interval between capture and the first hash, and between the first hash and anchoring on the ledger, is a window of vulnerability that must be minimised and recorded (\cref{sec:window}).
+  \item \textbf{A hash says nothing about truthfulness.} A staged photograph hashed at capture is a perfectly intact staged photograph. Blockchains preserve whatever is entered at collection; the controls at collection (witnesses, continuous A/V recording, device-generated hashes) carry that burden (\cref{sec:limits}).
+  \item \textbf{A physical object cannot be hashed.} Only digital captures \emph{of} it can. Whether an object in court is the object that was seized is a different question with a different (probabilistic) answer (\cref{sec:twolayer}).
+\end{enumerate}
+
+\subsection{Requirements}
+\label{sec:requirements}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+ID & Requirement \\
+\midrule
+R1 & Every artefact is fingerprinted with an exact, collision-resistant hash at the earliest practicable point, with the time and place of hashing recorded. \\
+R2 & Every evidence item has one canonical, machine-validated record (the manifest) whose fingerprint is anchored on the ledger. \\
+R3 & Physical items have a declared re-identification method with an explicit acceptance rule, and every re-identification is itself recorded. \\
+R4 & The actor and time of every custody event come from the transaction (certificate and transaction timestamp), never from user input. \\
+R5 & History is append-only: corrections are new events; nothing is updated or deleted on the ledger. \\
+R6 & No single agency can rewrite, reorder or suppress ledger history. \\
+R7 & The ledger holds no evidence content and no low-entropy personal data in clear; disclosure is need-to-know. \\
+R8 & A third party (court, defence expert) can verify any artefact against the ledger with standard tools and without trusting the operator. \\
+R9 & The outputs required by BNSS/BSA procedure, notably the s.63(4)(c) certificate fields, can be produced directly from the records. \\
+R10 & Hash algorithms can be replaced without invalidating existing records (algorithm agility). \\
+\bottomrule
+\end{tabularx}
+\end{center}

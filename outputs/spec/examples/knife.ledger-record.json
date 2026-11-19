@@ -1,0 +1,9 @@
+{
+  "evidence_id": "GJ-GNR-CYBPS-2026-000123-E002",
+  "evidence_class": "PHYSICAL_ITEM",
+  "parent_evidence_id": null,
+  "manifest_sha256": "8683fd081a95c447badfa8b84145295d7e8e173cd96cbe96800ce2059b3e574c",
+  "merkle_root": "bff2e3d7ce1a560246efde52b91d5a82cf858e53c460e5b240c8300a22d6a399",
+  "artefact_count": 2,
+  "spec_version": "1.0"
+}

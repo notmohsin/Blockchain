@@ -1,0 +1,18 @@
+\section{Input specification}
+\label{app:spec}
+
+This appendix is generated from \code{outputs/\allowbreak spec/\allowbreak evidence-manifest.schema.json} and \code{custody-event.schema.json} by \code{tools/schema\_to\_tex.py}, so it always matches the machine-readable specification. \enquote{Req.} marks fields the schema requires; a manifest missing any of them is rejected. General rules:
+\begin{itemize}[nosep]
+  \item timestamps are RFC~3339 with an explicit offset (e.g.\ \code{2026-11-19T10:42:05+05:30});
+  \item decimals are strings, and floating-point numbers are forbidden so that canonicalisation is exact;
+  \item persons who sign on the ledger carry their certificate subject (\code{pki\_subject});
+  \item credentials (passcodes) are never recorded.
+\end{itemize}
+
+{\small
+\input{generated/spec_tables.tex}
+}
+
+\subsection{Example manifest}
+The complete manifest of the scene photograph used in \cref{sec:worked} (\code{spec/\allowbreak examples/\allowbreak scene-photo.manifest.json}):
+\lstinputlisting[style=json]{../spec/examples/scene-photo.manifest.json}

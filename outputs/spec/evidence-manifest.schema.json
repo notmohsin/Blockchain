@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://custodychain.local/spec/1.0/evidence-manifest.schema.json",
+  "title": "CustodyChain Evidence Manifest v1.0",
+  "description": "The canonical off-chain record of one evidence item: case context, collection facts, packaging, class-specific attributes, every captured artefact with its integrity hashes, and identity fingerprints. Only the SHA-256 of the RFC 8785 canonical form of this document (the manifest hash) and the salted Merkle root over its artefacts are written to the ledger. Numbers are integers only; decimals are carried as strings so that canonicalisation is exact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_version", "evidence_id", "evidence_class", "case", "title", "collection", "packaging", "class_attributes", "artefacts", "integrity"],
+  "properties": {
+    "spec_version": { "const": "1.0" },
+    "evidence_id": {
+      "description": "Globally unique item ID: <STATE>-<DISTRICT>-<UNIT>-<YEAR>-<CASE SEQ>-E<ITEM SEQ>.",
+      "type": "string",
+      "pattern": "^[A-Z]{2}-[A-Z]{2,5}-[A-Z0-9]{2,8}-[0-9]{4}-[0-9]{6}-E[0-9]{3}$"
+    },
+    "parent_evidence_id": {
+      "description": "Set when this item was derived from another item (aliquot, forensic image, extraction, enhanced copy).",
+      "type": ["string", "null"]
+    },
+    "evidence_class": {
+      "enum": [
+        "SCENE_PHOTOGRAPH", "AV_RECORDING", "CCTV_EXPORT", "PHYSICAL_DOCUMENT", "PHYSICAL_ITEM",
+        "BIO_TRACE_SAMPLE", "DIGITAL_DEVICE", "FORENSIC_IMAGE", "MOBILE_EXTRACTION", "CLOUD_DATA",
+        "IOT_LOG", "PROCEDURAL_DOCUMENT"
+      ]
+    },
+    "title": { "type": "string", "minLength": 3, "maxLength": 200 },
+    "description": { "type": "string", "maxLength": 4000 },
+    "case": { "$ref": "#/$defs/case" },
+    "collection": { "$ref": "#/$defs/collection" },
+    "packaging": { "$ref": "#/$defs/packaging" },
+    "class_attributes": { "type": "object" },
+    "artefacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artefact" }
+    },
+    "identity_fingerprints": {
+      "description": "Layer-2 (tolerant) fingerprints used to re-identify the physical item or content later. Never used as integrity proof.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/identity_fingerprint" }
+    },
+    "integrity": { "$ref": "#/$defs/integrity" }
+  },
+
+  "allOf": [
+    { "if": { "properties": { "evidence_class": { "const": "SCENE_PHOTOGRAPH" } } },   "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_scene_photograph" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "AV_RECORDING" } } },       "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_av_recording" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "CCTV_EXPORT" } } },        "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_cctv_export" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "PHYSICAL_DOCUMENT" } } },  "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_physical_document" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "PHYSICAL_ITEM" } } },      "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_physical_item" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "BIO_TRACE_SAMPLE" } } },   "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_bio_trace_sample" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "DIGITAL_DEVICE" } } },     "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_digital_device" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "FORENSIC_IMAGE" } } },     "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_forensic_image" } }, "required": ["parent_evidence_id"] } },
+    { "if": { "properties": { "evidence_class": { "const": "MOBILE_EXTRACTION" } } },  "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_mobile_extraction" } }, "required": ["parent_evidence_id"] } },
+    { "if": { "properties": { "evidence_class": { "const": "CLOUD_DATA" } } },         "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_cloud_data" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "IOT_LOG" } } },            "then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_iot_log" } } } },
+    { "if": { "properties": { "evidence_class": { "const": "PROCEDURAL_DOCUMENT" } } },"then": { "properties": { "class_attributes": { "$ref": "#/$defs/attrs_procedural_document" } } } }
+  ],
+
+  "$defs": {
+    "hex256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "timestamp": {
+      "description": "RFC 3339 with explicit offset, e.g. 2026-11-19T10:42:05+05:30.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "decimal": { "description": "Decimal number carried as a string.", "type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$" },
+    "quantity": {
+      "type": "object", "additionalProperties": false, "required": ["value", "unit"],
+      "properties": { "value": { "$ref": "#/$defs/decimal" }, "unit": { "type": "string" } }
+    },
+    "person": {
+      "type": "object", "additionalProperties": false, "required": ["name", "role"],
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string", "description": "e.g. Investigating Officer, First Responder, FSL Examiner, Independent Witness" },
+        "designation": { "type": "string" },
+        "badge_or_employee_id": { "type": "string" },
+        "organisation": { "type": "string" },
+        "pki_subject": { "type": "string", "description": "X.509 subject DN of the signing certificate (Fabric identity) when the person signs on the ledger." },
+        "address": { "type": "string", "description": "Required for independent witnesses (BNSS search witnesses)." }
+      }
+    },
+    "location": {
+      "type": "object", "additionalProperties": false, "required": ["description"],
+      "properties": {
+        "description": { "type": "string" },
+        "address": { "type": "string" },
+        "latitude": { "$ref": "#/$defs/decimal" },
+        "longitude": { "$ref": "#/$defs/decimal" },
+        "position_source": { "enum": ["GNSS", "NETWORK", "MANUAL", "UNKNOWN"] }
+      }
+    },
+    "capture_device": {
+      "description": "Mirrors the device fields of the BSA s.63(4)(c) Schedule certificate.",
+      "type": "object", "additionalProperties": false, "required": ["device_type", "make_model"],
+      "properties": {
+        "device_type": { "enum": ["Computer/Storage Media", "DVR", "Mobile", "Flash Drive", "CD/DVD", "Server", "Cloud", "Camera", "3D Scanner", "Flatbed Scanner", "Other"] },
+        "make_model": { "type": "string" },
+        "colour": { "type": "string" },
+        "serial_number": { "type": "string" },
+        "imei_uin_uid_mac_cloud_id": { "type": "string" },
+        "software": { "type": "string", "description": "Capture app / firmware and version, e.g. 'e-Sakshya 2.x'." },
+        "clock_check": {
+          "type": "object", "additionalProperties": false, "required": ["reference", "offset_seconds"],
+          "properties": {
+            "reference": { "type": "string", "description": "e.g. 'NTP via mobile network', 'NIC time server', 'photographed against reference clock'" },
+            "offset_seconds": { "type": "integer", "description": "device time minus reference time" }
+          }
+        }
+      }
+    },
+    "case": {
+      "type": "object", "additionalProperties": false, "required": ["fir_number", "police_station", "district", "state"],
+      "properties": {
+        "fir_number": { "type": "string", "pattern": "^[0-9]{1,6}/[0-9]{4}$" },
+        "police_station": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "sections_invoked": { "type": "array", "items": { "type": "string" } },
+        "court": { "type": "string" },
+        "cctns_case_id": { "type": "string" }
+      }
+    },
+    "collection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["collected_at", "location", "collected_by", "legal_basis"],
+      "properties": {
+        "collected_at": { "$ref": "#/$defs/timestamp" },
+        "location": { "$ref": "#/$defs/location" },
+        "collected_by": { "$ref": "#/$defs/person" },
+        "witnesses": { "type": "array", "items": { "$ref": "#/$defs/person" } },
+        "legal_basis": { "type": "string", "description": "e.g. 'BNSS s.105 search and seizure', 'BNSS s.176(3) forensic scene visit', 'BNSS s.94 production'." },
+        "seizure_memo_ref": { "type": "string", "description": "evidence_id of the PROCEDURAL_DOCUMENT holding the seizure memo / panchnama." },
+        "av_recording_ref": { "type": "string", "description": "evidence_id of the AV_RECORDING of the search/seizure (BNSS s.105)." },
+        "condition_on_collection": { "type": "string" }
+      }
+    },
+    "packaging": {
+      "type": "object", "additionalProperties": false, "required": ["container"],
+      "properties": {
+        "container": { "type": "string", "description": "e.g. 'tamper-evident bag', 'Faraday bag', 'sealed envelope', 'cold-chain box', 'none (born-digital)'" },
+        "seal_ids": { "type": "array", "items": { "type": "string" } },
+        "label_id": { "type": "string", "description": "Printed label / QR / RFID identifier affixed to the container." },
+        "sealed_by": { "$ref": "#/$defs/person" },
+        "sealed_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "artefact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artefact_id", "role", "media_type", "size_bytes", "sha256", "sha3_256", "captured_at", "capture_device"],
+      "properties": {
+        "artefact_id": { "type": "string", "pattern": "^A[0-9]{3}$" },
+        "sequence": { "type": "integer", "minimum": 1, "description": "Order of the artefact within the item (page number, frame number, segment number)." },
+        "role": {
+          "enum": [
+            "primary_file", "scene_photo", "overview_photo", "closeup_photo", "scale_photo", "seal_photo",
+            "page_scan", "cover_photo", "edge_photo", "scan_3d", "texture_3d", "av_segment", "native_player",
+            "export_log", "acquisition_log", "image_segment", "extraction_package", "extraction_report",
+            "provider_package", "provider_certificate", "log_export", "document_pdf", "document_scan",
+            "measurement_record", "lab_report", "temperature_log", "other"
+          ]
+        },
+        "media_type": { "type": "string", "description": "IANA media type, e.g. image/jpeg, model/ply, application/pdf." },
+        "file_name": { "type": "string" },
+        "size_bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/hex256" },
+        "sha3_256": { "$ref": "#/$defs/hex256" },
+        "hashed_at": { "$ref": "#/$defs/timestamp" },
+        "hashed_on": { "type": "string", "description": "Where the first hash was computed: 'capture device', 'police station designated desktop', 'FSL workstation'." },
+        "captured_at": { "$ref": "#/$defs/timestamp" },
+        "capture_device": { "$ref": "#/$defs/capture_device" },
+        "capture_parameters": { "type": "object", "description": "Class-specific capture settings (dpi, resolution, codec, scanner accuracy, ...)." },
+        "parent_artefact_id": { "type": ["string", "null"], "description": "Set for a derived artefact (enhanced copy, transcode); the original must remain in the manifest." },
+        "chunking": {
+          "description": "Optional chunk-level hashes for large files (video, images) so damage can be localised.",
+          "type": "object", "additionalProperties": false, "required": ["chunk_size_bytes", "chunk_merkle_root"],
+          "properties": { "chunk_size_bytes": { "type": "integer", "minimum": 1 }, "chunk_merkle_root": { "$ref": "#/$defs/hex256" } }
+        },
+        "leaf_salt": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "32-byte random salt for this artefact's Merkle leaf (kept off-chain)." }
+      }
+    },
+    "identity_fingerprint": {
+      "type": "object", "additionalProperties": false, "required": ["method", "method_version", "source_artefact_ids", "value", "match_rule"],
+      "properties": {
+        "method": { "enum": ["phash-dct-64", "dhash-64", "mesh-icp-rms", "seal-id-exact", "label-id-exact", "serial-exact", "keypoint-set", "measurement-tolerance"] },
+        "method_version": { "type": "string" },
+        "source_artefact_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "value": { "type": "string", "description": "Fingerprint value (hex for hashes; for mesh-icp-rms the SHA-256 of the reference mesh)." },
+        "match_rule": { "type": "string", "description": "Machine-readable acceptance rule, e.g. 'hamming<=10', 'rms_mm<=0.50', 'exact'." }
+      }
+    },
+    "integrity": {
+      "type": "object", "additionalProperties": false, "required": ["hash_algorithms", "merkle_scheme", "merkle_root"],
+      "properties": {
+        "hash_algorithms": { "type": "array", "items": { "enum": ["SHA-256", "SHA3-256"] }, "minItems": 1 },
+        "merkle_scheme": { "const": "RFC6962-SHA256-salted-v1" },
+        "merkle_root": { "$ref": "#/$defs/hex256" },
+        "canonicalisation": { "const": "RFC8785-JCS" }
+      }
+    },
+
+    "attrs_scene_photograph": {
+      "type": "object", "additionalProperties": false,
+      "required": ["photo_series_id", "frame_number", "view", "scale_present", "subject"],
+      "properties": {
+        "photo_series_id": { "type": "string" },
+        "frame_number": { "type": "integer", "minimum": 1 },
+        "view": { "enum": ["overall", "mid-range", "close-up", "aerial", "entry-exit"] },
+        "scale_present": { "type": "boolean" },
+        "colour_reference_present": { "type": "boolean" },
+        "subject": { "type": "string" },
+        "original_format": { "enum": ["JPEG", "HEIC", "RAW-DNG", "RAW-VENDOR", "PNG", "TIFF"] },
+        "flash": { "type": "boolean" }
+      }
+    },
+    "attrs_av_recording": {
+      "type": "object", "additionalProperties": false,
+      "required": ["purpose", "legal_provision", "started_at", "ended_at", "media_blank_confirmed", "segment_number", "segment_count"],
+      "properties": {
+        "purpose": { "enum": ["search-seizure", "scene-of-crime", "witness-statement", "victim-statement", "identification-parade", "property-disposal", "other"] },
+        "legal_provision": { "type": "string", "description": "e.g. 'BNSS s.105', 'BNSS s.185(2)', 'BNSS s.176(3)', 'BNSS s.180(3)'" },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "ended_at": { "$ref": "#/$defs/timestamp" },
+        "media_blank_confirmed": { "type": "boolean" },
+        "segment_number": { "type": "integer", "minimum": 1 },
+        "segment_count": { "type": "integer", "minimum": 1 },
+        "continuity_device_ref": { "type": "string", "description": "evidence_id of the second recorder that captured a memory-card change, if any." },
+        "codec": { "type": "string" },
+        "forwarded_to_magistrate_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "attrs_cctv_export": {
+      "type": "object", "additionalProperties": false,
+      "required": ["system_make_model", "camera_ids", "footage_start", "footage_end", "dvr_clock_offset_seconds", "export_method"],
+      "properties": {
+        "system_make_model": { "type": "string" },
+        "system_serial": { "type": "string" },
+        "owner_or_operator": { "$ref": "#/$defs/person" },
+        "camera_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "footage_start": { "$ref": "#/$defs/timestamp" },
+        "footage_end": { "$ref": "#/$defs/timestamp" },
+        "dvr_clock_offset_seconds": { "type": "integer" },
+        "export_method": { "type": "string" },
+        "native_format": { "type": "string" },
+        "native_player_included": { "type": "boolean" }
+      }
+    },
+    "attrs_physical_document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_type", "page_count", "dimensions_mm", "binding", "scan_dpi", "scan_colour_mode", "distinguishing_features"],
+      "properties": {
+        "document_type": { "type": "string", "description": "e.g. 'spiral notebook', 'ledger', 'letter', 'diary'" },
+        "page_count": { "type": "integer", "minimum": 1, "description": "Number of sides scanned (each side is one page_scan artefact)." },
+        "leaf_count": { "type": "integer", "minimum": 1 },
+        "blank_pages": { "type": "array", "items": { "type": "integer" } },
+        "dimensions_mm": { "type": "object", "additionalProperties": false, "required": ["width", "height"], "properties": { "width": { "$ref": "#/$defs/decimal" }, "height": { "$ref": "#/$defs/decimal" }, "thickness": { "$ref": "#/$defs/decimal" } } },
+        "binding": { "type": "string" },
+        "writing_media": { "type": "array", "items": { "type": "string" } },
+        "distinguishing_features": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "scan_dpi": { "type": "integer", "minimum": 300 },
+        "scan_colour_mode": { "enum": ["RGB-24", "RGB-48", "GRAY-8", "GRAY-16"] },
+        "scan_file_format": { "enum": ["PNG", "TIFF"] }
+      }
+    },
+    "attrs_physical_item": {
+      "type": "object", "additionalProperties": false,
+      "required": ["item_category", "dimensions_mm", "material", "unique_marks", "scan_3d"],
+      "properties": {
+        "item_category": { "type": "string", "description": "e.g. 'edged weapon', 'firearm', 'garment', 'footwear', 'tool'" },
+        "dimensions_mm": { "type": "object", "additionalProperties": false, "required": ["length"], "properties": { "length": { "$ref": "#/$defs/decimal" }, "width": { "$ref": "#/$defs/decimal" }, "height": { "$ref": "#/$defs/decimal" } } },
+        "mass": { "$ref": "#/$defs/quantity" },
+        "material": { "type": "string" },
+        "colour": { "type": "string" },
+        "serial_or_make_marks": { "type": "string" },
+        "unique_marks": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "scan_3d": {
+          "type": "object", "additionalProperties": false, "required": ["method", "point_spacing_mm", "stated_accuracy_mm"],
+          "properties": {
+            "method": { "enum": ["structured-light", "laser", "photogrammetry", "lidar", "not-performed"] },
+            "point_spacing_mm": { "$ref": "#/$defs/decimal" },
+            "stated_accuracy_mm": { "$ref": "#/$defs/decimal" },
+            "reason_not_performed": { "type": "string" }
+          }
+        },
+        "expected_changes": { "type": "array", "items": { "type": "string" }, "description": "Known reasons the item may legitimately change (swabbing, decay, test firing)." }
+      }
+    },
+    "attrs_bio_trace_sample": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sample_type", "collection_method", "container_type", "container_barcode", "quantity", "storage_condition"],
+      "properties": {
+        "sample_type": { "type": "string", "description": "e.g. 'blood swab', 'hair', 'soil', 'fibre', 'viscera'" },
+        "collection_method": { "type": "string" },
+        "container_type": { "type": "string" },
+        "container_barcode": { "type": "string" },
+        "quantity": { "$ref": "#/$defs/quantity" },
+        "storage_condition": { "enum": ["ambient", "refrigerated-2-8C", "frozen--20C", "frozen--80C", "dry"] },
+        "temperature_log_ref": { "type": "string" },
+        "biohazard": { "type": "boolean" },
+        "consumed_by_testing": { "type": "boolean" }
+      }
+    },
+    "attrs_digital_device": {
+      "type": "object", "additionalProperties": false,
+      "required": ["device_type", "make_model", "serial_number", "power_state_at_seizure", "isolation"],
+      "properties": {
+        "device_type": { "enum": ["Computer/Storage Media", "DVR", "Mobile", "Flash Drive", "CD/DVD", "Server", "Other"] },
+        "make_model": { "type": "string" },
+        "colour": { "type": "string" },
+        "serial_number": { "type": "string" },
+        "imei_uin_uid_mac": { "type": "array", "items": { "type": "string" } },
+        "sim_iccids": { "type": "array", "items": { "type": "string" } },
+        "storage_media": { "type": "array", "items": { "type": "string" } },
+        "power_state_at_seizure": { "enum": ["on-unlocked", "on-locked", "off", "unknown"] },
+        "isolation": { "enum": ["faraday-bag", "airplane-mode", "powered-off", "none"] },
+        "lock_status": { "enum": ["no-lock", "locked-credential-known", "locked-credential-unknown"], "description": "Never store the credential itself in the manifest." }
+      }
+    },
+    "attrs_forensic_image": {
+      "type": "object", "additionalProperties": false,
+      "required": ["acquisition_tool", "write_blocker", "image_format", "source_stream_sha256", "verification_sha256", "acquisition_started_at", "acquisition_ended_at", "examiner"],
+      "properties": {
+        "acquisition_tool": { "type": "string", "description": "Name and exact version." },
+        "write_blocker": { "type": "string", "description": "Make, model and serial, or 'software (name/version)' or 'none (justify)'." },
+        "image_format": { "enum": ["RAW-DD", "E01", "EX01", "AFF4", "VENDOR"] },
+        "source_media_size_bytes": { "type": "integer", "minimum": 0 },
+        "source_stream_sha256": { "$ref": "#/$defs/hex256", "description": "SHA-256 of the bit stream read from the source media during acquisition." },
+        "verification_sha256": { "$ref": "#/$defs/hex256", "description": "SHA-256 recomputed from the finished image; must equal source_stream_sha256." },
+        "tool_reported_hashes": { "type": "object", "description": "Hashes reported by the tool (e.g. E01 embedded MD5/SHA-1), kept for cross-reference only." },
+        "bad_sectors": { "type": "integer", "minimum": 0 },
+        "acquisition_started_at": { "$ref": "#/$defs/timestamp" },
+        "acquisition_ended_at": { "$ref": "#/$defs/timestamp" },
+        "examiner": { "$ref": "#/$defs/person" }
+      }
+    },
+    "attrs_mobile_extraction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tool", "extraction_type", "started_at", "ended_at", "examiner"],
+      "properties": {
+        "tool": { "type": "string", "description": "Name and exact version." },
+        "extraction_type": { "enum": ["logical", "file-system", "full-file-system", "physical", "cloud-token"] },
+        "device_state": { "type": "string" },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "ended_at": { "$ref": "#/$defs/timestamp" },
+        "tool_reported_hashes": { "type": "object" },
+        "examiner": { "$ref": "#/$defs/person" }
+      }
+    },
+    "attrs_cloud_data": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "account_identifiers", "legal_process_ref", "received_at", "delivery_method"],
+      "properties": {
+        "provider": { "type": "string" },
+        "account_identifiers": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "legal_process_ref": { "type": "string", "description": "Notice / order reference under which the data was produced." },
+        "date_range_requested": { "type": "object", "additionalProperties": false, "properties": { "from": { "$ref": "#/$defs/timestamp" }, "to": { "$ref": "#/$defs/timestamp" } } },
+        "received_at": { "$ref": "#/$defs/timestamp" },
+        "delivery_method": { "type": "string" },
+        "provider_supplied_hash": { "type": "string" },
+        "provider_signature_present": { "type": "boolean" },
+        "capture_format": { "enum": ["provider-native", "WARC", "PDF-print", "JSON", "CSV", "other"] }
+      }
+    },
+    "attrs_iot_log": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_system", "device_ids", "log_start", "log_end", "time_sync", "at_source_integrity"],
+      "properties": {
+        "source_system": { "type": "string" },
+        "device_ids": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "log_start": { "$ref": "#/$defs/timestamp" },
+        "log_end": { "$ref": "#/$defs/timestamp" },
+        "time_sync": { "type": "string", "description": "e.g. 'NTP pool, ±50 ms', 'unsynchronised RTC (offset measured: +312 s)'" },
+        "at_source_integrity": { "enum": ["hash-chained", "signed", "append-only-store", "none"] },
+        "export_method": { "type": "string" },
+        "log_format": { "type": "string" }
+      }
+    },
+    "attrs_procedural_document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_type", "document_number", "born_digital", "signatories"],
+      "properties": {
+        "document_type": { "enum": ["seizure-memo", "panchnama", "chain-of-custody-form", "forwarding-letter", "fsl-request", "fsl-report", "bsa63-certificate-part-a", "bsa63-certificate-part-b", "case-diary-extract", "court-order", "other"] },
+        "document_number": { "type": "string" },
+        "born_digital": { "type": "boolean" },
+        "signatories": { "type": "array", "items": { "$ref": "#/$defs/person" }, "minItems": 1 },
+        "digital_signature": { "type": "string", "description": "e.g. 'IT Act 2000 s.3A electronic signature (eSign)', 'none'" },
+        "refers_to_evidence_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

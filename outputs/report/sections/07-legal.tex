@@ -1,0 +1,85 @@
+\section{Indian legal and procedural mapping}
+\label{sec:legal}
+
+The Bharatiya Nagarik Suraksha Sanhita (BNSS), Bharatiya Sakshya Adhiniyam (BSA) and Bharatiya Nyaya Sanhita (BNS) replaced the CrPC, the Indian Evidence Act and the IPC with effect from 1 July 2024~\cite{bnss2023,bsa2023,bns2023}. For this system the decisive change is that audio-video recording and hashing are now \emph{statutory procedure}, not merely good practice. This section is a technical mapping prepared from the statutes as summarised in the SOP for audio-visual recording~\cite{sopbnss} and from government statements~\cite{rs1332,pib2026}. It is not legal advice, and the points marked \emph{to verify} should be confirmed with a legal expert before the design is relied on.
+
+\subsection{Provisions that shape the design}
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{2.6cm}X>{\raggedright\arraybackslash}p{4.4cm}@{}}
+\toprule
+Provision & Requirement (as summarised in~\cite{sopbnss}) & System support \\
+\midrule
+BNSS s.105 & Search and seizure, including preparing the list of seized things and its signing by witnesses, \emph{shall} be recorded by audio-video electronic means, preferably a mobile phone; the recording is forwarded without delay to the Magistrate. & \code{AV\_RECORDING} item referenced by every seized item (\code{av\_recording\_ref}); \code{forwarded\_to\_magistrate\_at}. \\
+BNSS s.185(2) & A search by a police officer shall be recorded by audio-video means, preferably mobile phone. & As above. \\
+BNSS s.176(3) & For offences punishable with 7 years or more, from a date notified by the State (within five years), a forensic expert visits the scene to collect forensic evidence, and the process is videographed. & \code{SCENE\_PHOTOGRAPH}, \code{AV\_RECORDING}, and the physical classes; the legal basis is recorded per item. \\
+BNSS s.173, s.180, s.183(6)(a) & Video recording of information and statements in specified circumstances (mandatory for some victims or witnesses with disability). & \code{AV\_RECORDING} with \code{purpose} = statement. \\
+BNSS s.497(3) & The court causes property pending trial to be photographed and, if necessary, videographed before custody or disposal. & \code{DISPOSE}/\code{RETURN} events require the court order and the hashes of the photographs. \\
+BNSS s.193 & The SOP flowchart directs that the chain of custody be submitted with the charge-sheet. & Chain-of-custody form generated from events (\cref{sec:lifecycle}). \\
+BNSS s.329 & Reports of notified Government scientific experts may be used as evidence. & FSL organisation and examiner identities; report hashes on \code{EXAMINE\_END}. \\
+BSA s.61 & An electronic or digital record is not to be denied admissibility merely because it is electronic (subject to s.63). & Basis for treating hashed digital captures as evidence. \\
+BSA s.57, s.58 & Primary vs.\ secondary evidence; explanations address electronic records. & Originals (master negative) vs.\ copies: copies are proven by \emph{equal hashes}. \\
+BSA s.63(4)(c) and the Schedule & A certificate accompanies the electronic record \emph{at each instance} it is submitted. Part~A is completed by the person in charge of the device or activity, Part~B by an expert. Both state the device details and \textbf{the hash value(s) and algorithm} (SHA1, SHA256, MD5 or another legally acceptable standard), with the hash report enclosed. & \Cref{tab:bsa}: every field is in the manifest; certificates are themselves \code{PROCEDURAL\_DOCUMENT} items. \\
+BSA s.39(2); IT Act s.79A & The opinion of a notified Examiner of Electronic Evidence is a relevant fact. & Examiner identity on FSL events. \\
+\bottomrule
+\end{tabularx}
+\caption{Statutory provisions and how the design supports them.}
+\label{tab:law}
+\end{table}
+
+\subsection{The Section 63 certificate as a data model}
+The Schedule certificate~\cite{bsa2023} (reproduced in~\cite{sopbnss}) fixes the information that must accompany any electronic record. The manifest captures every field, so Parts~A and~B can be generated directly from it (R9):
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{0.40\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+Schedule field (Parts A and B) & Manifest source \\
+\midrule
+Device or record source (Computer/Storage Media, DVR, Mobile, Flash Drive, CD/DVD, Server, Cloud, Other) & \code{capture\_device.device\_type} / \code{class\_attributes.device\_type} (same enumeration) \\
+Make and model, colour, serial number & \code{capture\_device.make\_model}, \code{colour}, \code{serial\_number} \\
+IMEI / UIN / UID / MAC / Cloud ID & \code{capture\_device.imei\_uin\_uid\_mac\_cloud\_id} \\
+Owned / maintained / managed / operated by the certifier & \code{collection.collected\_by} or the CCTV \code{owner\_or\_operator} \\
+Hash value(s) and algorithm; hash report enclosed & \code{artefacts[].sha256} (algorithm SHA256) and \code{sha3\_256} (\enquote{Other}); the hash report is the manifest itself \\
+Date, time (IST, 24 h), place & \code{hashed\_at}, \code{location} \\
+Name, designation, signature (Part B: expert) & \code{person} records and the certificate signature on the ledger \\
+\bottomrule
+\end{tabularx}
+\caption{BSA Schedule certificate fields mapped to the manifest.}
+\label{tab:bsa}
+\end{table}
+
+\begin{caution}[MD5 and SHA-1 on the statutory form]
+The Schedule offers MD5 and SHA-1 as options. Both are cryptographically broken for collision resistance~\cite{wang2005,stevens2017}. The system should always certify SHA-256, adding SHA3-256 under \enquote{Other}, and treat MD5/SHA-1 values produced by legacy tools only as cross-references.
+\end{caution}
+
+\subsection{Master negative, mirror image and the ledger}
+The SOP describes the procedure the design implements~\cite{sopbnss}:
+\begin{itemize}
+  \item the first responder hashes the recording on the device (or the sealed card is opened and hashed by the expert in the officer's presence) and gives a Part~A certificate;
+  \item the expert copies it to a designated disk, the \enquote{master negative}, which is never altered;
+  \item the expert re-hashes and confirms the hashes match, gives Part~B, and produces a \enquote{mirror image} copy for the Magistrate;
+  \item backups of the master negative are kept at a second location, \enquote{maybe for decades};
+  \item hash values are entered in the case diary.
+\end{itemize}
+
+In this design the master negative is the off-chain evidence store, and the ledger is the tamper-evident, multi-agency \emph{case diary of hashes}:
+\begin{itemize}
+  \item every hash comparison in the SOP becomes a \code{VERIFY\_INTEGRITY} event;
+  \item every handover becomes a two-phase transfer;
+  \item the hash written in the case diary becomes an anchored manifest hash that no single agency can alter.
+\end{itemize}
+
+\subsection{Government systems}
+The Ministry of Home Affairs has launched \textbf{e-Sakshya} for capturing, storing and retrieving evidence by photography and videography and for recording witness statements. As of February 2026 it was in use in 15{,}899 police stations across 35 States/UTs~\cite{rs1332}. It is described as creating a secure ecosystem for primary digital evidence and \enquote{ensuring integrity and authenticity of primary evidence from collection to presentation in court}~\cite{pib2026}. The SOP notes that NIC has developed it to capture audio/video and \enquote{generate hash reports with time stamps}~\cite{sopbnss}. The Interoperable Criminal Justice System (ICJS) exchanges records between police, courts, prisons, forensics and prosecution, and e-Forensic manages cases across forensic laboratories~\cite{pib2026}.
+
+\begin{keypoint}[Positioning]
+CustodyChain does not compete with e-Sakshya or ICJS. Its contribution is a \emph{multi-agency, append-only commitment layer} beneath them. Hashes produced by e-Sakshya at capture, events from e-Forensic and charge-sheet records from ICJS can all be anchored so that no single operator, the system owner included, can silently rewrite them. The integration interface is the manifest and the event schema.
+\end{keypoint}
+
+\subsection{Other legal considerations}
+\begin{itemize}
+  \item \textbf{Electronic signatures.} Procedural documents can carry electronic signatures under the IT Act 2000~\cite{itact2000}; ledger signatures are certificate-based but are not, by themselves, IT-Act electronic signatures. \emph{To verify:} whether ledger certificate signatures need to be issued under a licensed Certifying Authority to carry statutory weight.
+  \item \textbf{Personal data.} Manifests contain personal data (witnesses, accused, victims). The Digital Personal Data Protection Act 2023~\cite{dpdp2023} contains exemptions for the prevention, detection, investigation and prosecution of offences, but retention and erasure policies still have to be defined. Keeping personal data only in the off-chain manifest (\cref{tab:onoff}), with salted leaves on-chain, means an off-chain record can be deleted or crypto-shredded under a court order while the ledger keeps only a commitment that reveals nothing. \emph{To verify:} the precise scope of the exemption.
+  \item \textbf{Seizure of electronic devices.} The SOP records that, pending guidelines in \emph{Ram Ramaswamy v.\ Union of India}, the Supreme Court has directed central agencies to follow the CBI manual in the interim~\cite{sopbnss}. Procedures for the digital classes should be aligned with it.
+\end{itemize}

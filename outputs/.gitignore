@@ -1,0 +1,16 @@
+# Regenerable evidence files (python3 tools/make_worked_examples.py)
+worked-example/files/
+worked-example/files_tampered/
+# LaTeX build by-products (keep main.pdf)
+report/*.aux
+report/*.bbl
+report/*.bcf
+report/*.blg
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.run.xml
+report/*.toc
+__pycache__/
+report/*SAVE-ERROR

@@ -1,0 +1,116 @@
+{
+  "spec_version": "1.0",
+  "evidence_id": "GJ-GNR-CYBPS-2026-000123-E001",
+  "parent_evidence_id": null,
+  "evidence_class": "SCENE_PHOTOGRAPH",
+  "title": "Scene photograph: overall view of room 2 with markers 1-2",
+  "description": "Overall view taken by the first responder on entering room 2, before any item was moved.",
+  "case": {
+    "fir_number": "123/2026",
+    "police_station": "Cyber Crime Police Station Gandhinagar",
+    "district": "Gandhinagar",
+    "state": "Gujarat",
+    "sections_invoked": [
+      "BNS s.318(4)",
+      "BNS s.61(2)"
+    ],
+    "court": "Chief Judicial Magistrate, Gandhinagar"
+  },
+  "collection": {
+    "collected_at": "2026-11-19T10:42:05+05:30",
+    "location": {
+      "description": "Office premises of accused, ground floor, room 2",
+      "address": "Plot 14, GIDC, Gandhinagar",
+      "latitude": "23.2156",
+      "longitude": "72.6369",
+      "position_source": "GNSS"
+    },
+    "collected_by": {
+      "name": "Insp. A. Sharma",
+      "role": "Investigating Officer",
+      "designation": "Police Inspector",
+      "badge_or_employee_id": "GJP-44821",
+      "organisation": "Gujarat Police",
+      "pki_subject": "CN=a.sharma,OU=client,O=police.custodychain.local"
+    },
+    "witnesses": [
+      {
+        "name": "R. Patel",
+        "role": "Independent Witness",
+        "address": "Sector 21, Gandhinagar"
+      },
+      {
+        "name": "M. Desai",
+        "role": "Independent Witness",
+        "address": "Sector 22, Gandhinagar"
+      }
+    ],
+    "legal_basis": "BNSS s.176(3) scene of crime; BNSS s.105 search",
+    "av_recording_ref": "GJ-GNR-CYBPS-2026-000123-E010"
+  },
+  "packaging": {
+    "container": "none (born-digital); file on departmental phone"
+  },
+  "class_attributes": {
+    "photo_series_id": "SOC-123-2026-A",
+    "frame_number": 1,
+    "view": "overall",
+    "scale_present": true,
+    "colour_reference_present": false,
+    "subject": "Room 2: knife near stain (marker 1), phone (marker 2)",
+    "original_format": "JPEG",
+    "flash": false
+  },
+  "artefacts": [
+    {
+      "artefact_id": "A001",
+      "sequence": 1,
+      "role": "scene_photo",
+      "media_type": "image/jpeg",
+      "file_name": "photo/IMG_0001.jpg",
+      "captured_at": "2026-11-19T10:42:05+05:30",
+      "hashed_at": "2026-11-19T10:42:06+05:30",
+      "hashed_on": "capture device",
+      "capture_device": {
+        "device_type": "Mobile",
+        "make_model": "Departmental smartphone (ICJS spec)",
+        "serial_number": "R58N91XKQ2",
+        "imei_uin_uid_mac_cloud_id": "IMEI 356938035643809",
+        "software": "e-Sakshya (simulated)",
+        "clock_check": {
+          "reference": "NTP via mobile network",
+          "offset_seconds": 0
+        }
+      },
+      "capture_parameters": {
+        "resolution": "1600x1200",
+        "jpeg_quality": "92",
+        "exposure": "auto"
+      },
+      "size_bytes": 310932,
+      "sha256": "0ee550034602fa2da9f6716c4cead703e14cb47b3dcead1cbfda0eb1bf68b605",
+      "sha3_256": "6216222ac8cde0894e1492f1788e141bd870f889525e036614373c0d942b5571",
+      "leaf_salt": "d82e23b3956e8c8e6ef2e9910b2094b81b7e6771cdd1164a8f6ed52fef323121"
+    }
+  ],
+  "identity_fingerprints": [
+    {
+      "method": "phash-dct-64",
+      "method_version": "1",
+      "source_artefact_ids": [
+        "A001"
+      ],
+      "value": "e94a86b1b1ce39b1",
+      "match_rule": "hamming<=10"
+    }
+  ],
+  "integrity": {
+    "hash_algorithms": [
+      "SHA-256",
+      "SHA3-256"
+    ],
+    "merkle_scheme": "RFC6962-SHA256-salted-v1",
+    "merkle_root": "7f9dfc69765b9a34bc4f58ebc6a895aa61b7c5baf23ac35a6091e95333d48a02",
+    "canonicalisation": "RFC8785-JCS"
+  }
+}

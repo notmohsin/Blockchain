@@ -1,0 +1,90 @@
+\section{The network: consensus, organisations and persistence}
+\label{sec:network}
+
+\subsection{Where consensus happens in Hyperledger Fabric}
+Fabric uses an \emph{execute--order--validate} architecture~\cite{androulaki2018}:
+\begin{enumerate}[nosep]
+  \item \textbf{Execute.} The client sends a proposal to endorsing peers. Each peer simulates the chaincode and signs the result (the read/write set). The endorsement policy decides whose signatures are required.
+  \item \textbf{Order.} The client sends the endorsed transaction to the \emph{ordering service}, which agrees on a single total order of transactions and cuts blocks.
+  \item \textbf{Validate.} Every peer checks each transaction's endorsements against the policy and checks for conflicts, then appends the block to its ledger.
+\end{enumerate}
+\emph{Consensus} in the classical sense, agreement among nodes on the order of history, is the job of the ordering nodes (orderers). Peers do not vote on order. When the requirement is \enquote{at least four consensus nodes}, it therefore refers to \textbf{orderers}.
+
+\subsection{Kafka, Raft and BFT}
+\begin{description}[style=nextline,leftmargin=1.2em]
+  \item[Kafka (not used).] Early Fabric releases ordered transactions through an Apache Kafka/ZooKeeper cluster. Kafka-based ordering was deprecated in Fabric v2 and is not available in Fabric v3. The current network does \emph{not} use Kafka: its channel configuration declares \code{OrdererType: etcdraft} (Raft).
+  \item[Raft (current, crash fault tolerant).] A leader-based protocol~\cite{ongaro2014}. With $n$ orderers it tolerates $f$ \emph{crashed} nodes if $n \ge 2f+1$, but it assumes no node lies: a compromised leader could, for example, censor transactions. The test network inherited from the paper runs \textbf{a single} Raft orderer, so it has no fault tolerance and no consensus among independent parties in any meaningful sense.
+  \item[BFT (decided).] Byzantine fault tolerance~\cite{lamport1982,castro1999} tolerates nodes that crash \emph{or behave arbitrarily}: send conflicting messages, propose invalid blocks, or collude. Fabric v3 ships a BFT ordering service based on the SmartBFT library~\cite{barger2021,fabricdocs}.
+\end{description}
+
+\paragraph{Why four is the minimum.} BFT protocols in the PBFT family need $n \ge 3f+1$ nodes to tolerate $f$ Byzantine nodes, and decisions require a quorum of $2f+1$. The intuition: a node can wait for only $n-f$ replies, because $f$ may never answer. Of those replies, up to $f$ may be lies, so the honest replies ($n-2f$) must still outnumber the lies ($f$), which requires $n-2f > f$, i.e.\ $n > 3f$. With $f=1$: $n=4$ and quorum $3$.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabular}{@{}>{\centering}p{1.6cm}>{\centering}p{2.3cm}>{\centering}p{2.6cm}>{\centering}p{1.5cm}l@{}}
+\toprule
+Orderers $n$ & Raft: crashes tolerated & BFT: faulty nodes tolerated & BFT quorum & Comment \\
+\midrule
+1 & 0 & -- & -- & current test network \\
+3 & 1 & 0 & -- & Raft minimum for fault tolerance \\
+\textbf{4} & 1 & \textbf{1} & \textbf{3} & \textbf{BFT minimum; planned} \\
+7 & 3 & 2 & 5 & \\
+10 & 4 & 3 & 7 & \\
+\bottomrule
+\end{tabular}
+\caption{Fault tolerance by number of ordering nodes.}
+\end{table}
+
+\subsection{Organisations}
+To make \enquote{no single agency can rewrite history} (R6) concrete, each consensus node is operated by a different agency. In the test phase all of them run on one laptop.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[font=\small, node distance=5mm and 7mm,
+  ord/.style={draw=ink, fill=ink!10, rounded corners=2pt, minimum width=27mm, minimum height=8mm, align=center},
+  peer/.style={draw=accent, fill=accent!10, rounded corners=2pt, minimum width=27mm, minimum height=8mm, align=center},
+  cc/.style={draw=gray, fill=gray!8, rounded corners=2pt, minimum width=27mm, minimum height=6mm, align=center, font=\scriptsize}]
+  \node[ord] (o1) {orderer.police};
+  \node[ord, right=of o1] (o2) {orderer.fsl};
+  \node[ord, right=of o2] (o3) {orderer.court};
+  \node[ord, right=of o3] (o4) {orderer.prosecution};
+  \node[draw=ink, dashed, rounded corners, fit=(o1)(o4), inner sep=5pt, label={[font=\scriptsize]above:BFT ordering service: $n=4$, $f=1$, quorum 3}] (os) {};
+  \node[peer, below=12mm of o1] (p1) {peer0.police};
+  \node[peer, below=12mm of o2] (p2) {peer0.fsl};
+  \node[peer, below=12mm of o3] (p3) {peer0.court};
+  \node[cc, below=3mm of p1] {chaincode (CCaaS)};
+  \node[cc, below=3mm of p2] {chaincode (CCaaS)};
+  \node[cc, below=3mm of p3] {chaincode (CCaaS)};
+  \node[draw=gray, rounded corners, minimum width=27mm, minimum height=8mm, below=12mm of o4, align=center] (gw) {gateway / UI\\\scriptsize (Police identity)};
+  \foreach \p in {p1,p2,p3} \draw[-{Latex[length=2mm]}, gray] (\p) -- (os);
+  \draw[-{Latex[length=2mm]}, gray] (gw) -- (p1);
+\end{tikzpicture}
+\caption{Planned test topology: four agency-operated BFT orderers and three agency peers on channel \code{mychannel}.}
+\label{fig:topology}
+\end{figure}
+
+\paragraph{What this buys and what it does not.} With one faulty or malicious orderer, say a compromised Police node, the remaining three still form a quorum and the ledger keeps progressing correctly; the faulty node can neither reorder nor forge blocks. If two of the four are faulty, BFT can no longer guarantee progress. Endorsement policies add a second, independent control. For example, requiring the endorsement of both the sending and the receiving agency for transfers means no single agency's peer can fabricate a handover. BFT does \emph{not} make data entered at collection true, and it cannot stop collusion of a quorum.
+
+\paragraph{Peer count.} BFT governs orderers only. Peers hold ledger copies and endorse, and three (one per agency that handles evidence) are enough to demonstrate multi-agency endorsement. The architecture scales to more peers and orderers when hardware allows.
+
+\subsection{Persistence}
+\label{sec:persistence}
+In the inherited scripts, \code{network.sh down} was the only way to stop the network, and it deletes the ledger volumes, the world state and all certificates. This is why every hash and every history disappeared between sessions. This has been fixed:
+\begin{itemize}
+  \item \code{network.sh stop} stops all Fabric containers (chaincode, peers, orderers, CAs) and deletes nothing;
+  \item \code{network.sh start} resumes them from their persisted Docker volumes, in dependency order;
+  \item \code{network.sh down} remains, explicitly, the \enquote{wipe everything} command, and now warns accordingly.
+\end{itemize}
+The chaincode containers are no longer started with \code{--rm}, so they survive a stop, and they carry the Fabric label so the lifecycle commands find them.
+
+\paragraph{Tests performed (19 Nov 2026, Raft test network).} Each test started from a fresh network with one record:
+\begin{enumerate}[nosep]
+  \item record created, giving height 7 and current block hash \code{ypZfn9Vp...};
+  \item \code{stop} and \code{start}: the height and hash were identical, the record was intact, and a new write committed as block 8;
+  \item all containers killed with \code{docker kill} to simulate power loss, then \code{start}: both peers came back at height 8 with identical hashes and both records.
+\end{enumerate}
+A reboot of the host is equivalent to case 3: containers are left stopped with their volumes intact.
+
+\subsection{Implementation status}
+\label{sec:netstatus}
+\input{generated/network_status.tex}

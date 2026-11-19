@@ -1,0 +1,9 @@
+{
+  "evidence_id": "GJ-GNR-CYBPS-2026-000123-E001",
+  "evidence_class": "SCENE_PHOTOGRAPH",
+  "parent_evidence_id": null,
+  "manifest_sha256": "97d115c039aae8de9b250e6e80ff7ee9cc2aeb203842891aa24f42c20be51cd2",
+  "merkle_root": "7f9dfc69765b9a34bc4f58ebc6a895aa61b7c5baf23ac35a6091e95333d48a02",
+  "artefact_count": 1,
+  "spec_version": "1.0"
+}

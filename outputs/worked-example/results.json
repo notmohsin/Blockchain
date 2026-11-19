@@ -1,0 +1,240 @@
+{
+  "photo": {
+    "threshold": 10,
+    "rows": [
+      {
+        "file": "IMG_0001.jpg",
+        "description": "Original file as produced by the device",
+        "sha256": "0ee550034602fa2da9f6716c4cead703e14cb47b3dcead1cbfda0eb1bf68b605",
+        "size": 310932,
+        "sha256_equal": true,
+        "phash": "e94a86b1b1ce39b1",
+        "phash_hamming": 0
+      },
+      {
+        "file": "IMG_0001_exact_copy.jpg",
+        "description": "Byte-for-byte copy (e.g. to the master-negative disk)",
+        "sha256": "0ee550034602fa2da9f6716c4cead703e14cb47b3dcead1cbfda0eb1bf68b605",
+        "size": 310932,
+        "sha256_equal": true,
+        "phash": "e94a86b1b1ce39b1",
+        "phash_hamming": 0
+      },
+      {
+        "file": "IMG_0001_resaved.jpg",
+        "description": "Opened and re-saved as JPEG (same quality setting)",
+        "sha256": "f769b2449ec51305d11cc8ff3e9be8f61bddaa13a1f134bd134f4d8fdcc449f8",
+        "size": 312793,
+        "sha256_equal": false,
+        "phash": "e94a86b1b1ce39b1",
+        "phash_hamming": 0
+      },
+      {
+        "file": "IMG_0001_exif_edited.jpg",
+        "description": "Only the EXIF date/time edited; pixels untouched",
+        "sha256": "c5c6eeca12251f4f55148d1d194341e2f3f3782ef603219098b11b6c01e67867",
+        "size": 312793,
+        "sha256_equal": false,
+        "phash": "e94a86b1b1ce39b1",
+        "phash_hamming": 0
+      },
+      {
+        "file": "IMG_0002_second_shot.jpg",
+        "description": "Second photograph of the same scene, seconds later",
+        "sha256": "81e30dfc25a89d1d16dd5017c203eec0630a55861f62fe17902aaf5dc7d4dce3",
+        "size": 410651,
+        "sha256_equal": false,
+        "phash": "e94a86b1b1ce39b1",
+        "phash_hamming": 0
+      },
+      {
+        "file": "IMG_0001_knife_removed.jpg",
+        "description": "Original with the knife digitally removed",
+        "sha256": "2e2864e31f9b783b88a28e627005741008edefa70b37ae3668e42b7f3b9c3f99",
+        "size": 307204,
+        "sha256_equal": false,
+        "phash": "e94a86b1b1ce39b1",
+        "phash_hamming": 0
+      },
+      {
+        "file": "IMG_0107_other_scene.jpg",
+        "description": "Photograph of a different scene",
+        "sha256": "90ed56c40568ae5aa0a35906b3a8ac833254b3537ad99b503776fb776d1d749f",
+        "size": 300109,
+        "sha256_equal": false,
+        "phash": "bbc89634c43d496b",
+        "phash_hamming": 28
+      }
+    ]
+  },
+  "notebook_rescan": [
+    {
+      "page": 1,
+      "orig_sha256": "4b83b1636bb458bd4f1f8ba5cda6339264839be9f7cf3f1233d6f95871e4b7c1",
+      "rescan_sha256": "7d1dd5a349b1a7e5d4a0acf6954e738317abecfcd5f16bf692aab3c6635dd9d1",
+      "phash_hamming": 4,
+      "kind": "FSL re-scan of the same page"
+    },
+    {
+      "page": 2,
+      "orig_sha256": "c71aed67a84ba93a6fcad3abb8e7961abfdbf2f7bb3490b2663950f2ad099269",
+      "rescan_sha256": "7b0b17e348236ed1ead84827751ef2b9d2e12bbb39210adfa9ae8f44e2dce129",
+      "phash_hamming": 4,
+      "kind": "FSL re-scan of the same page"
+    },
+    {
+      "page": 3,
+      "orig_sha256": "6f56721abffa9ba0c1d308ce5ab7534287006bfaed83fa03772821a62427b90b",
+      "rescan_sha256": "a7b2fb2817d69f4c922e3d9228ab545938bb938e66a10e01408b7742a83df841",
+      "phash_hamming": 2,
+      "kind": "FSL re-scan of the same page"
+    },
+    {
+      "page": 4,
+      "orig_sha256": "9d17cf1286e73ba1fc14b41dad74b9312910db13579a3fdfdeb477fbe0837719",
+      "rescan_sha256": "a2267f0ad4b9b4b16f88e2340ce0071a345f645b4cdaf1d7b972b519b19f4bb9",
+      "phash_hamming": 4,
+      "kind": "FSL re-scan of the same page"
+    },
+    {
+      "page": 5,
+      "orig_sha256": "76eb8499bda3742aac89288513fb90fec09425786a279f8732c3768498262d2b",
+      "rescan_sha256": "b95f550fb3623ca5f85e61f1068c5df301167c2ef0f0511759f511563bad99a0",
+      "phash_hamming": 2,
+      "kind": "FSL re-scan of the same page"
+    },
+    {
+      "page": 6,
+      "orig_sha256": "b074bdfa579c82afca8858cd4d88aa791ddb49ab30b7d654fc16e2b1ec46bf38",
+      "rescan_sha256": "ee4a979f22b2b39a46bd9e48738caf8208d4388cbb06544bf34243507a725d2a",
+      "phash_hamming": 2,
+      "kind": "FSL re-scan of the same page"
+    },
+    {
+      "page": 4,
+      "orig_sha256": "9d17cf1286e73ba1fc14b41dad74b9312910db13579a3fdfdeb477fbe0837719",
+      "rescan_sha256": "2edd917f266bd73cb95344b85edc4a5adaa3cc5a0f2a69b9fc212071247a8086",
+      "phash_hamming": 20,
+      "kind": "Substituted (re-written) page 4"
+    }
+  ],
+  "knife": {
+    "rule": {
+      "rms_mm": 0.6,
+      "max_mm": 3.0
+    },
+    "rows": [
+      {
+        "file": "rescan_same.ply",
+        "description": "Same knife, re-scanned at FSL (new pose, new sampling, 0.15 mm noise)",
+        "rms_mm": 0.5679,
+        "p95_mm": 0.965,
+        "max_mm": 2.3865,
+        "max_query_to_ref_mm": 1.9055,
+        "max_ref_to_query_mm": 2.3865,
+        "ref_points": 16000,
+        "query_points": 16000,
+        "match": true
+      },
+      {
+        "file": "rescan_notched.ply",
+        "description": "Same knife after an 8 x 5 mm nick appeared in the edge",
+        "rms_mm": 0.5792,
+        "p95_mm": 0.9749,
+        "max_mm": 4.444,
+        "max_query_to_ref_mm": 1.997,
+        "max_ref_to_query_mm": 4.444,
+        "ref_points": 16000,
+        "query_points": 16000,
+        "match": false
+      },
+      {
+        "file": "rescan_tip_broken.ply",
+        "description": "Same knife with 6 mm of the tip broken off",
+        "rms_mm": 0.5699,
+        "p95_mm": 0.9641,
+        "max_mm": 5.0241,
+        "max_query_to_ref_mm": 1.908,
+        "max_ref_to_query_mm": 5.0241,
+        "ref_points": 16000,
+        "query_points": 16000,
+        "match": false
+      },
+      {
+        "file": "lookalike_longer.ply",
+        "description": "Look-alike knife, blade 6 mm longer",
+        "rms_mm": 0.5807,
+        "p95_mm": 0.9817,
+        "max_mm": 4.3651,
+        "max_query_to_ref_mm": 4.3651,
+        "max_ref_to_query_mm": 2.6328,
+        "ref_points": 16000,
+        "query_points": 16000,
+        "match": false
+      }
+    ],
+    "ref_points": 16000
+  },
+  "disk": {
+    "size_bytes": 8388608,
+    "source_stream_sha256": "1b3166fa49149b5c3a2370e9d4242e60da918f4c6e4cff7a0ee9aa6fea5e8c06",
+    "verification_sha256": "1b3166fa49149b5c3a2370e9d4242e60da918f4c6e4cff7a0ee9aa6fea5e8c06",
+    "corrupted_sha256": "84b6d634e07837f51604d601496e7489d4d79c602da7547d389c20003039b747",
+    "chunk_size": 1048576,
+    "differing_chunks": [
+      4
+    ],
+    "chunk_root_good": "e34fb65db1bfba880d50220aa447df5eb1c461a9b4ad2ffbeea0ed5139027654",
+    "chunk_root_bad": "bde2bf07c5c6c89de6b98a40b88989123effee703f626920dd64cea76d518e42"
+  },
+  "notebook_tamper": [
+    "A006 (notebook/page_004.png): size_bytes mismatch: manifest 36499 != file 1140696",
+    "A006 (notebook/page_004.png): sha256 mismatch: manifest 9d17cf1286e73ba1fc14b41dad74b9312910db13579a3fdfdeb477fbe0837719 != file 2edd917f266bd73cb95344b85edc4a5adaa3cc5a0f2a69b9fc212071247a8086",
+    "A006 (notebook/page_004.png): sha3_256 mismatch: manifest 08601e27fb44bd9fc62fd3ad8602d3d49dace6247a87ab567eb799165ac05bf7 != file fef33dd0e7c5aed0da61a957840b25cffbcf4afabd863ba53bc49854899a29df",
+    "Merkle root from files mismatch: manifest 6e8451494a032e3317bc66df35c259c968a35e2fc67832d4f079695e9c514102 != files d2e3ffa44a09a377f858c6dccc39cc442326c1eccb4548dd010f346e4ee147e9"
+  ],
+  "notebook_tamper_manifest_rewritten": [
+    "Manifest hash mismatch: ledger d5b719250e11dda255782f9fa1d4b77d746ae94d7a5bc5232df470b2e902ade1 != manifest ffd436514d57386e7daad82416818e427491e10f0c3500604e296d4b65a88f4f",
+    "Merkle root mismatch: ledger 6e8451494a032e3317bc66df35c259c968a35e2fc67832d4f079695e9c514102 != manifest d2e3ffa44a09a377f858c6dccc39cc442326c1eccb4548dd010f346e4ee147e9"
+  ],
+  "proof": {
+    "artefact_id": "A006",
+    "index": 5,
+    "size": 8,
+    "path": [
+      "f6406262fac9975272a7909c44f361d22092b6f49806e870fd061b9ae7b04ba7",
+      "f554525c9214f3feee25497221aa329342f06ac6131af232e974f176f7966618",
+      "55fba80e03452a8183405fcecc05bb608342485045b03c39b20caf920acc102d"
+    ],
+    "verifies": true
+  },
+  "records": {
+    "scene-photo": {
+      "evidence_id": "GJ-GNR-CYBPS-2026-000123-E001",
+      "evidence_class": "SCENE_PHOTOGRAPH",
+      "parent_evidence_id": null,
+      "manifest_sha256": "97d115c039aae8de9b250e6e80ff7ee9cc2aeb203842891aa24f42c20be51cd2",
+      "merkle_root": "7f9dfc69765b9a34bc4f58ebc6a895aa61b7c5baf23ac35a6091e95333d48a02",
+      "artefact_count": 1,
+      "spec_version": "1.0"
+    },
+    "notebook": {
+      "evidence_id": "GJ-GNR-CYBPS-2026-000123-E004",
+      "evidence_class": "PHYSICAL_DOCUMENT",
+      "parent_evidence_id": null,
+      "manifest_sha256": "d5b719250e11dda255782f9fa1d4b77d746ae94d7a5bc5232df470b2e902ade1",
+      "merkle_root": "6e8451494a032e3317bc66df35c259c968a35e2fc67832d4f079695e9c514102",
+      "artefact_count": 8,
+      "spec_version": "1.0"
+    },
+    "knife": {
+      "evidence_id": "GJ-GNR-CYBPS-2026-000123-E002",
+      "evidence_class": "PHYSICAL_ITEM",
+      "parent_evidence_id": null,
+      "manifest_sha256": "8683fd081a95c447badfa8b84145295d7e8e173cd96cbe96800ce2059b3e574c",
+      "merkle_root": "bff2e3d7ce1a560246efde52b91d5a82cf858e53c460e5b240c8300a22d6a399",
+      "artefact_count": 2,
+      "spec_version": "1.0"
+    }
+  }
+}
