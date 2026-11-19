@@ -1,0 +1,15 @@
+\begin{longtable}{@{}p{0.30\linewidth}p{0.24\linewidth}p{0.32\linewidth}l@{}}
+\caption{Tamper suite: attack, expected behaviour, observed behaviour (gateway-v2/scripts/tamper-suite.js).}\label{tab:tamper}\\
+\toprule
+Attack & Expected & Observed & \\ \midrule\endhead
+One bit of a stored (encrypted) evidence file flipped on disk & download refused & \footnotesize HTTP 409: evidence store integrity failure for A001: Unsupported state or unable to authenticate dat & \textbf{detected}\\
+Stored manifest corrupted on disk & verification INCONCLUSIVE (never MATCH); store error reported & \footnotesize INCONCLUSIVE; evidence store integrity failure for the manifest of GJ-GNR-CYBPS-2026 & \textbf{detected}\\
+Insider stores a doctored photo plus a self-consistent forged manifest & NO\_MATCH: the ledger still points to the original manifest & \footnotesize NO\_MATCH (ledger manifest 9a63dc08a1f8\ldots{}, forged fa02e40cb658\ldots{}) & \textbf{detected}\\
+Valid agency certificate without a CustodyChain role writes to the ledger & rejected by the chaincode & \footnotesize caller User1@\allowbreak{}police.\allowbreak{}custodychain.\allowbreak{}local@\allowbreak{}PoliceMSP has no CustodyChain role & \textbf{detected}\\
+Caller puts a different custodian, registrant and date in the arguments & ignored: actor from certificate, time from transaction & \footnotesize custodian io.\allowbreak{}sharma@\allowbreak{}PoliceMSP, registered\_at 2026-11-19T16:42:55.\allowbreak{}462Z & \textbf{detected}\\
+Replay of the same registration & rejected (already exists) & \footnotesize evidence GJ-GNR-CYBPS-2026-775621-E900 already exists & \textbf{detected}\\
+Receiver completes a Police-\textgreater{}FSL hand-over with FSL+Court endorsements only & rejected at validation (key-level policy) & \footnotesize Transaction be9d46820396\ldots{} failed to commit with s & \textbf{detected}\\
+Same-agency colleague (not custodian) disposes of the item & rejected (custodian only) & \footnotesize only the current custodian may record DISPOSE & \textbf{detected}\\
+File altered between the officer's browser and the gateway & rejected before anything is stored or anchored & \footnotesize HTTP 400: file 'IMG\_0001.\allowbreak{}jpg' changed in transit: browser SHA-256 2e2864e31f9b78 & \textbf{detected}\\
+\bottomrule
+\end{longtable}

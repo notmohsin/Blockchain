@@ -1,6 +1,6 @@
 # CustodyChain prototype v2: run and test guide
 
-This is the working prototype built in milestones M0–M5 of [`outputs/ROADMAP.md`](../outputs/ROADMAP.md). Every design choice is recorded in [`outputs/DECISIONS.md`](../outputs/DECISIONS.md) (D-032 to D-047 for this build).
+This is the working prototype built in milestones M0–M8 of [`outputs/ROADMAP.md`](../outputs/ROADMAP.md). Every design choice is recorded in [`outputs/DECISIONS.md`](../outputs/DECISIONS.md) (D-032 to D-051 for this build). The report's chapters 10 and 11 (`outputs/report/main.pdf`) describe the implementation and its evaluation.
 
 ## What it is
 
@@ -50,26 +50,32 @@ Anyone can verify a file against the ledger. Change the passwords with `node scr
 1. **`io.sharma`**: Register evidence → *Physical document* → fill in the case, seal number and details → add page scans. Each file's SHA-256 appears **before** upload → Register. The result shows the on-chain manifest hash and Merkle root.
 2. On the evidence page, **Transfer custody** to `examiner.mehta`. The status becomes *in transfer*; custody hasn't moved yet.
 3. **`examiner.mehta`**: *Incoming transfers* (1) → open → **Accept custody**, confirming the seal number. Record an identity check, start and complete the examination (the report is hashed in the browser), then transfer to `clerk.rao`.
+   *Run identity check* with re-scans of the pages: they are compared page by page with the reference fingerprints; a substituted or missing page gives **NO MATCH**.
 4. **`clerk.rao`**: accept, then *Record court submission*. Use **Verify a file** with an original page (**MATCH**, naming the artefact), then with any edited copy (**NO MATCH**).
+   Open **Custody report** and **BSA §63 Part A/B** (print to PDF), or download the **Verification bundle**.
 5. The **chain of custody** timeline shows every step, with the actor taken from their certificate and the time from the ledger.
 
 ## Tests
 
-| Command | What it checks | Result (2026-11-19) |
+| Command | What it checks | Result (2026-11-20) |
 |---|---|---|
 | `cd backend/chaincode-v2 && npm test` | contract rules on an in-memory ledger that, like Fabric, doesn't let a transaction read its own writes | 18/18 |
-| `cd backend/gateway-v2 && npm test` | JS fingerprints byte-identical to the Python reference; encrypted store (tamper, overwrite, AAD binding) | 10/10 |
-| `cd backend/gateway-v2 && npm run e2e` | the acceptance scenario through the API on the live BFT network, including an attack: a Police→FSL handover endorsed by FSL+Court only is **rejected by the ledger** | 34/34 |
-| `cd frontend-v2 && npm run test:ui` (gateway running) | the acceptance scenario through the browser (headless Chromium) | 24/24 |
-| `cd backend/network-bft && ./test-bft.sh` | BFT properties: quorum signatures, f=1 tolerance, halts with 2 down, leader change, persistence (16 containers, about 507 MiB) | 8/8 |
+| `cd backend/gateway-v2 && npm test` | JS fingerprints byte-identical to the Python reference; encrypted store | 10/10 |
+| `cd backend/gateway-v2 && npm run e2e` | the full scenario through the API on the live BFT network: registration (photo, notebook, knife with 3D scan), transfers, automatic identity checks, examination, court submission, verification, downloads, proofs, court outputs, independent check of the bundle, and the two-agency endorsement attack | 46/46 |
+| `cd backend/gateway-v2 && node scripts/tamper-suite.js` | 9 attacks on stored data and contract inputs | 9/9 detected |
+| `cd frontend-v2 && npm run test:ui` (gateway running) | the scenario through the browser (headless Chromium); prints sample PDFs | 26/26 |
+| `cd backend/network-bft && ./test-bft.sh` | BFT properties: quorum signatures, f=1 tolerance, halts with 2 down, leader change, persistence | 8/8 |
+| `cd backend/gateway-v2 && node scripts/bench.js <label>` | latency and throughput (BFT-4 vs Raft-4: `CONSENSUS=raft ./network.sh all`) | `outputs/evaluation/` |
 
-Screenshots: `outputs/prototype-screenshots/`.
+Screenshots: `outputs/prototype-screenshots/`. Sample court outputs: `outputs/prototype-samples/`.
+
+**Performance (one laptop, settled run):** a custody write completes in about 65–180 ms at the median (under 0.3 s at p95) with up to 32 concurrent clients, at about 180–200 committed tx/s. On this host there is no measurable cost of BFT compared with Raft with the same 4 orderers (report §11.4).
 
 ## Known limitations (prototype)
 
 - **Authentication:** a local `users.json` with scrypt hashes and in-memory sessions (D-043). Production would use agency SSO or a hardware token bound to the certificate.
 - **Key custody:** one gateway holds all agencies' storage master keys (D-045). Production would run one gateway and key service per agency.
 - **Network:** CAs run without TLS on localhost, and all nodes run on one laptop (D-011, D-035).
-- **Identity checks (L2):** pHash and 3D comparison are not yet run by the app; the examiner records the result. The Python tool computes them (roadmap M6).
-- **Court outputs:** no custody-report PDF or BSA s.63 certificate generation yet (roadmap M7).
-- **Block validation:** peer-side enforcement of BFT quorum signatures is still to be confirmed (D-030).
+- **Identity checks (L2):** the thresholds (pHash ≤ 10; 3D RMS ≤ 0.60 mm, maximum ≤ 3.00 mm) are illustrative until calibrated on real captures (D-020, D-048).
+- **Court outputs:** BSA s.63 certificates are pre-filled **drafts**; the certifying person must check, complete and sign them (D-049). PDFs come from the browser's print.
+- **Evaluation:** a single host, so no wide-area latency between agencies (D-051).

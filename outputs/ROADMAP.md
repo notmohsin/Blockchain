@@ -2,7 +2,7 @@
 
 *Last updated 2026-11-19. Decisions are logged in [`DECISIONS.md`](DECISIONS.md). Completed phases 1–3 are in [`PLAN.md`](PLAN.md).*
 
-> **Status:** **M0–M5 are done** on branch `prototype/m0-m5` (autonomous run, D-032). How to run and test it: [`CustodyChain/PROTOTYPE.md`](../CustodyChain/PROTOTYPE.md).
+> **Status:** **M0–M9 are done** on branch `prototype/m0-m5` (autonomous runs, D-032). How to run and test it: [`CustodyChain/PROTOTYPE.md`](../CustodyChain/PROTOTYPE.md).
 >
 > | Milestone | Commit | Evidence |
 > |---|---|---|
@@ -12,7 +12,12 @@
 > | M3 + M4 | `ac9610f` | encrypted store + API; 34/34 end-to-end checks on the live BFT network, including the D-038 endorsement attack |
 > | M5 | `818b4af` | UI; 24/24 browser checks |
 >
-> **Remaining:** M6 (identity checks run by the app), M7 (court outputs), M8 (benchmarks and formal tamper suite), M9 (report chapters).
+> | M6 | `3e02036` | the app runs identity checks (pHash, 3D) itself; e2e checks match the report's worked numbers |
+> | M7 | `a1a5a79` | custody report, BSA s.63 Part A/B drafts, verification bundle; sample PDFs |
+> | M8 | `93319b2` + evaluation commit | tamper suite 9/9; benchmarks BFT-4 vs Raft-4 (two rounds); D-030 resolved (D-050) |
+> | M9 | report v0.2 | chapters "Implementation" and "Evaluation"; decision-log appendix generated from this log |
+>
+> **Next (beyond the prototype):** calibrate L2 thresholds on real captures; a capture app hashing on the device (R1); per-agency gateways and key custody; multi-host deployment and a wide-area benchmark; private data collections per case; a legal review of the certificate drafts. See §5 and the report's open questions.
 
 ## 1. Where we are
 

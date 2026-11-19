@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-19T16:27:39.849Z",
-  "evidence_id": "GJ-GNR-CYBPS-2026-758966-E001",
+  "date": "2026-11-19T16:42:56.016Z",
+  "evidence_id": "GJ-GNR-CYBPS-2026-775621-E001",
   "rows": [
     {
       "attack": "One bit of a stored (encrypted) evidence file flipped on disk",
@@ -17,7 +17,7 @@
     {
       "attack": "Insider stores a doctored photo plus a self-consistent forged manifest",
       "expected": "NO_MATCH: the ledger still points to the original manifest",
-      "observed": "NO_MATCH (ledger manifest ed9d5c05358f…, forged 93ad0e8f4813…)",
+      "observed": "NO_MATCH (ledger manifest 9a63dc08a1f8…, forged fa02e40cb658…)",
       "detected": true
     },
     {
@@ -29,19 +29,19 @@
     {
       "attack": "Caller puts a different custodian, registrant and date in the arguments",
       "expected": "ignored: actor from certificate, time from transaction",
-      "observed": "custodian io.sharma@PoliceMSP, registered_at 2026-11-19T16:27:39.131Z",
+      "observed": "custodian io.sharma@PoliceMSP, registered_at 2026-11-19T16:42:55.462Z",
       "detected": true
     },
     {
       "attack": "Replay of the same registration",
       "expected": "rejected (already exists)",
-      "observed": "evidence GJ-GNR-CYBPS-2026-758966-E900 already exists",
+      "observed": "evidence GJ-GNR-CYBPS-2026-775621-E900 already exists",
       "detected": true
     },
     {
       "attack": "Receiver completes a Police->FSL hand-over with FSL+Court endorsements only",
       "expected": "rejected at validation (key-level policy)",
-      "observed": "Transaction 02976e9b730bf3aa92b6c17f173a28b0fa961db29e22406d38c30f0dd81c18c5 failed to commit with s",
+      "observed": "Transaction be9d46820396cbfefee3f1dd7ee34ace031950847a706f1cdb172296d091dd84 failed to commit with s",
       "detected": true
     },
     {

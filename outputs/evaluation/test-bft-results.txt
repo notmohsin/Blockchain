@@ -1,0 +1,60 @@
+CustodyChain BFT network test: 2026-11-19T21:58:40+05:30
+Fabric v3.1.5, channel 'custody', chaincode 'custody'
+
+[1] Channel configuration
+  consensus type: BFT; consenters (4): 1:PoliceOrdererMSP@orderer.police.custodychain.local:7050 2:FSLOrdererMSP@orderer.fsl.custodychain.local:8050 3:CourtOrdererMSP@orderer.court.custodychain.local:11050 4:ProsecutionOrdererMSP@orderer.prosecution.custodychain.local:10050 
+  PASS  BFT with 4 consenters (n=4 -> f=1, quorum 3)
+
+[2] Transaction with all orderers up
+  PASS  committed VALID on all 3 peers in 0.4 s
+  newest block (#9) carries 3 orderer signatures from: consenter-1 consenter-2 consenter-3 
+  PASS  block certified by a BFT quorum (>= 3 of 4 consenter signatures)
+
+[3] One orderer down (orderer.prosecution): f = 1 must be tolerated
+  PASS  committed with 3 of 4 orderers in 0.2 s
+
+[4] Two orderers down (prosecution + court): no quorum of 3
+  PASS  no block was produced (height stayed 11): BFT halts rather than risk safety
+
+[5] Recovery: restart both orderers
+  PASS  commits resumed 55.2 s after restart
+  orderer heights after recovery:
+    orderer.police.custodychain.local: 12
+    orderer.fsl.custodychain.local: 12
+    orderer.court.custodychain.local: 12
+    orderer.prosecution.custodychain.local: 12
+  PASS  all 4 orderers at the same height (stopped nodes caught up)
+
+[6] Leader failure: current leader is consenter 2 (orderer.fsl.custodychain.local); stop it, submit via orderer.court.custodychain.local
+  PASS  view change elected consenter 3; commits resumed after 54.8 s
+
+[7] Persistence: network.sh stop / start
+  containers running while stopped: 0; peer heights+hashes before: 13 RYStJaP67dJii8dBKEZsYFScH85tE15b1S4LrQH4YBw=, after: 13 RYStJaP67dJii8dBKEZsYFScH85tE15b1S4LrQH4YBw=
+  PASS  identical heights, block hashes and world state after stop/start
+  PASS  new transaction committed after restart
+
+[8] Resource use (docker stats)
+    court-evidence-cc: 65.67MiB
+    fsl-evidence-cc: 55.04MiB
+    police-evidence-cc: 63.31MiB
+    court-custody-cc: 57.71MiB
+    fsl-custody-cc: 56.51MiB
+    police-custody-cc: 57.5MiB
+    orderer.prosecution.custodychain.local: 22.05MiB
+    orderer.fsl.custodychain.local: 15.49MiB
+    peer0.court.custodychain.local: 50.98MiB
+    orderer.court.custodychain.local: 15.71MiB
+    orderer.police.custodychain.local: 15.46MiB
+    peer0.fsl.custodychain.local: 43.94MiB
+    ca.police.custodychain.local: 9.902MiB
+    ca.fsl.custodychain.local: 10.02MiB
+    peer0.police.custodychain.local: 45.44MiB
+    ca.court.custodychain.local: 10.46MiB
+  total memory of 16 containers: 595 MiB
+
+Final heights:
+    14 klsaPY1gllQwcYE8WzaqStzJwVU+TFvDmOmDJAfIxkY=
+    14 klsaPY1gllQwcYE8WzaqStzJwVU+TFvDmOmDJAfIxkY=
+    14 klsaPY1gllQwcYE8WzaqStzJwVU+TFvDmOmDJAfIxkY=
+
+RESULT: ALL TESTS PASSED

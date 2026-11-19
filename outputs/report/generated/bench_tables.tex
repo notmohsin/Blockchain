@@ -1,0 +1,70 @@
+\begin{table}[htbp]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}rrrrrrrrr@{}}
+\toprule
+ & \multicolumn{4}{c}{BFT, 4 orderers} & \multicolumn{4}{c}{Raft, 4 orderers (control)}\\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+Conc. & p50 ms & p95 ms & max ms & tx/s & p50 ms & p95 ms & max ms & tx/s\\
+\midrule
+1 & 64 & 122 & 122 & 14.19 & 105 & 121 & 124 & 9.59\\
+4 & 70 & 127 & 135 & 46.1 & 117 & 141 & 146 & 33.68\\
+8 & 129 & 153 & 157 & 60.84 & 107 & 133 & 135 & 72.98\\
+16 & 128 & 215 & 253 & 116.46 & 135 & 157 & 172 & 118.23\\
+32 & 149 & 209 & 276 & 198.35 & 162 & 204 & 232 & 195.61\\
+\bottomrule
+\end{tabular}
+\caption{RecordEvent(ACCESS): latency and committed throughput by concurrency (failed transactions: bft4-r2 0, raft4-r2 0).}
+\label{tab:bench-recordeventaccess}
+\end{table}
+
+\begin{table}[htbp]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}rrrrrrrrr@{}}
+\toprule
+ & \multicolumn{4}{c}{BFT, 4 orderers} & \multicolumn{4}{c}{Raft, 4 orderers (control)}\\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+Conc. & p50 ms & p95 ms & max ms & tx/s & p50 ms & p95 ms & max ms & tx/s\\
+\midrule
+1 & 65 & 74 & 106 & 15.46 & 105 & 118 & 123 & 9.63\\
+4 & 73 & 136 & 137 & 45.51 & 119 & 133 & 135 & 35.27\\
+8 & 116 & 163 & 171 & 63.16 & 125 & 166 & 173 & 62.97\\
+16 & 122 & 161 & 188 & 130.73 & 151 & 231 & 301 & 99.96\\
+32 & 172 & 213 & 281 & 182.11 & 221 & 366 & 427 & 131.45\\
+\bottomrule
+\end{tabular}
+\caption{RegisterEvidence: latency and committed throughput by concurrency (failed transactions: bft4-r2 0, raft4-r2 0).}
+\label{tab:bench-registerevidence}
+\end{table}
+
+\begin{table}[htbp]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}rrrrrrrrr@{}}
+\toprule
+ & \multicolumn{4}{c}{BFT, 4 orderers} & \multicolumn{4}{c}{Raft, 4 orderers (control)}\\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+Conc. & p50 ms & p95 ms & max ms & tx/s & p50 ms & p95 ms & max ms & tx/s\\
+\midrule
+1 & 6 & 8 & 10 & 163.32 & 11 & 13 & 14 & 98.26\\
+4 & 6 & 13 & 15 & 513.76 & 11 & 22 & 23 & 346.54\\
+8 & 12 & 25 & 30 & 578.3 & 12 & 22 & 28 & 566.48\\
+16 & 19 & 29 & 36 & 853.48 & 21 & 31 & 36 & 745.74\\
+32 & 28 & 46 & 57 & 1074.35 & 42 & 60 & 76 & 745.67\\
+\bottomrule
+\end{tabular}
+\caption{GetEvidence (query): latency and committed throughput by concurrency (failed transactions: bft4-r2 0, raft4-r2 0).}
+\label{tab:bench-getevidencequery}
+\end{table}
+
+\begin{table}[htbp]\centering\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Run & Load & \multicolumn{2}{c}{RecordEvent(ACCESS)} & \multicolumn{2}{c}{RegisterEvidence} & Query\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-7}
+ & avg & p50, c=1 & tx/s, c=32 & p50, c=1 & tx/s, c=32 & p50, c=1\\
+\midrule
+bft4-r2 & 2.46 & 64 ms & 198.35 & 65 ms & 182.11 & 6 ms\\
+bft4 & -- & 103 ms & 179.57 & 121 ms & 167.38 & 8 ms\\
+raft4-r2 & 2.43 & 105 ms & 195.61 & 105 ms & 131.45 & 11 ms\\
+raft4 & -- & 128 ms & 94.81 & 127 ms & 82.55 & 13 ms\\
+\bottomrule
+\end{tabular}
+\caption{All benchmark runs. Round 1 (\code{bft4}, \code{raft4}) ran directly after network builds; round 2 (\code{-r2}) after a 60~s settling period. Queries do not involve ordering, so their variation between runs measures host noise.}
+\label{tab:bench-runs}
+\end{table}

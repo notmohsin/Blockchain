@@ -1,0 +1,52 @@
+\section{Evaluation}
+\label{sec:eval}
+
+All results below were produced on the test laptop (\input{generated/bench_host.tex}) on 19--20 November 2026, using the scripts in the repository; the raw outputs are in \code{outputs/evaluation/}.
+
+\subsection{Functional correctness}
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}lXr@{}}
+\toprule
+Suite & What it exercises & Result \\
+\midrule
+Chaincode unit tests & every contract rule on an in-memory ledger that, like Fabric, gives a transaction no read-your-writes & 18/18 \\
+Gateway unit tests & JS fingerprints byte-identical to the Python reference (three example manifests and a Unicode-heavy one); encrypted store (tamper, overwrite, address binding) & 10/10 \\
+API end-to-end & the acceptance scenario of the roadmap on the live BFT network: registration of a photograph, a notebook and a knife; transfers between all three agencies; automatic identity checks; examination; court submission; verification; downloads; proofs; court outputs; independent verification of the bundle & 46/46 \\
+Browser end-to-end & the same scenario through the UI in headless Chromium, as four different users, including role-dependent visibility of actions and printing of the court outputs to PDF & 26/26 \\
+BFT network suite & consensus type and consenters; quorum signatures on blocks; tolerance of one stopped orderer; halt with two; recovery; leader failure and view change; persistence & 8/8 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Identity checks in the application.} The application reproduces the numbers of the worked examples (\cref{sec:worked}) because it calls the same reference tool: a full re-scan of the six notebook pages matched with a largest pHash distance of 4 (threshold 10); a re-scan with page 4 substituted was rejected, naming page 4; a re-scan with a page missing was rejected on page count; a 3D re-scan of the knife matched (RMS 0.568~mm, maximum 2.387~mm) and a re-scan with the tip broken off was rejected (maximum 5.024~mm).
+
+\subsection{Block validation (D-030, D-050)}
+Decoding the deployed channel configuration shows that peers accept a block only if it carries signatures of \textbf{3 of the 4 consenter identities} (\code{n\_out\_of: 3} over the four consenter certificates). Fabric 3.1.5's \code{configtxgen} writes this policy itself for BFT channels, replacing the \code{ANY Writers} rule of the sample configuration; generating the channel from the original configuration gives the same policy. Every observed block carries three consenter signatures. Peer \emph{rejection} of a forged single-signature block was not demonstrated, because producing one requires a modified orderer.
+
+\subsection{Tamper suite}
+\Cref{tab:tamper} lists attacks against stored data at rest and against the contract's inputs, run against the live network by \code{gateway-v2/scripts/tamper-suite.js}. All were detected or refused.
+{\small
+\input{generated/tamper_table.tex}
+}
+
+\subsection{Performance: BFT versus a Raft control}
+\label{sec:bench}
+\paragraph{Method (D-051).} A load generator using the application's own Fabric client submits transactions as \code{io.sharma} at concurrency 1, 4, 8, 16 and 32 (at least 40 transactions per level) and measures end-to-end latency (endorsement by two peers, ordering, commit on the gateway's peer) and committed throughput. Three operations are measured: an access-log write (\code{RecordEvent(ACCESS)}, one key), a registration (\code{RegisterEvidence}: record, event, two indexes, key-level policy) and a query (\code{GetEvidence}). To isolate the cost of Byzantine fault tolerance, the identical network (4 orderers, 3 peers, same chaincode and host) was rebuilt with Raft (etcdraft, 4 consenters) and measured the same way, with batching aligned (50~ms / 100 requests).
+
+\input{generated/bench_tables.tex}
+
+\paragraph{Results.} Tables \ref{tab:bench-recordeventaccess}--\ref{tab:bench-getevidencequery} give the settled round (round 2); \cref{tab:bench-runs} lists all four runs. No transaction failed in any run.
+\begin{itemize}
+  \item \textbf{Latency is interactive.} A custody write (access record or registration, including endorsement by two agencies, BFT ordering by four consenters and commit) completes in about 65--180~ms at the median and stays below 0.3~s at the 95th percentile up to 32 concurrent clients. For evidence handling, where a few transactions are submitted per item per day, this is far below any operational limit.
+  \item \textbf{Throughput has headroom.} On one laptop the BFT network committed about 180--200 transactions per second at 32 concurrent clients and had not saturated; queries reached about 1{,}000 per second. Evidence handling needs orders of magnitude less.
+  \item \textbf{No measurable cost of BFT at this scale.} In the settled round, BFT and Raft are within each other's run-to-run variation (BFT was faster at concurrency 1 and for registrations at 32; access-log throughput at 32 was equal). The first round, run directly after each network build, was slower for both and much slower for Raft; queries, which do not involve ordering at all, varied by about a factor of two between runs. On a single shared host, run-to-run noise is therefore as large as any protocol difference, and the honest conclusion is that \emph{the Byzantine fault tolerance of four agency-operated consenters costs no measurable latency or throughput here}, not that BFT is faster.
+  \item \textbf{What would change on a real deployment.} With consenters at four agencies, every ordering round crosses the network; BFT needs more message rounds than Raft, so wide-area latency will add more to BFT than to Raft. Repeating this benchmark across hosts is part of the deployment work (\cref{sec:limits}).
+\end{itemize}
+
+\subsection{Threats to validity}
+\begin{itemize}[nosep]
+  \item \textbf{Single host.} All nodes share one laptop's CPU and disk and there is no network latency between agencies; absolute latencies are optimistic and throughput is bounded by the host, not by the protocol.
+  \item \textbf{Synthetic evidence.} Identity-check thresholds come from synthetic captures (\cref{sec:limits}); they demonstrate the mechanism, not its error rates.
+  \item \textbf{Workload.} Real evidence handling is low-volume (registrations and transfers per case, not per second); the benchmarks show headroom rather than a target load.
+  \item \textbf{Adversary model of the tamper suite.} Attacks were run with the attacker's access simulated (direct file writes, chosen endorsers); compromise of a majority of agencies or of signing keys is out of scope (\cref{sec:limits}).
+\end{itemize}

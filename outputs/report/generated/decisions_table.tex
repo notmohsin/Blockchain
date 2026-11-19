@@ -1,0 +1,56 @@
+\begin{longtable}{@{}lp{0.12\linewidth}p{0.47\linewidth}p{0.13\linewidth}p{0.13\linewidth}@{}}
+\toprule
+ID & Date & Decision & Status & Decided by\\ \midrule\endhead
+D-001 & 2026-10-18 & Build on Loffi et al. CustodyChain (Fabric), not Chain4ensic & Accepted & User\\
+D-002 & 2026-11-17 & Reproduce the authors' system as published; only run-only changes & Accepted & User\\
+D-003 & 2026-11-17 & Deploy chaincode as a service (CCaaS) instead of deployCC & Accepted & Implementer\\
+D-004 & 2026-11-17 & Keep the authors' bugs in the baseline; fix only in improved versions & Accepted & Implementer\\
+D-005 & 2026-11-17 & One main branch; no feature branches & Accepted & User\\
+D-006 & 2026-11-17 & No hosted pages/artifacts; documents live as files in the repo & Accepted & User\\
+D-007 & 2026-11-17 & Fix the upstream network.sh chaincode-cleanup bug & Accepted & User\\
+D-008 & 2026-11-17 & Keep the infrastructure, rebuild the domain logic & Accepted & Implementer $\rightarrow$ User\\
+D-009 & 2026-11-19 & BFT consensus with 4 ordering (consensus) nodes & Accepted & Professor + User\\
+D-010 & 2026-11-19 & Model real agencies (test phase): Police, FSL, Court, Prosecution & Accepted & User (topology: Implementer) (review pending)\\
+D-011 & 2026-11-19 & Test deployment on a single laptop & Accepted & User\\
+D-012 & 2026-11-19 & Ledger must survive restarts; keep an explicit wipe command & Accepted & User\\
+D-013 & 2026-11-19 & Order of work: persistence $\rightarrow$ report/spec $\rightarrow$ BFT & Accepted & User\\
+D-014 & 2026-11-19 & Two-layer fingerprinting: exact integrity hashes + tolerant identity checks & Accepted & User\\
+D-015 & 2026-11-19 & Hash every artefact with SHA-256 and SHA3-256; MD5/SHA-1 only as cross-reference & Accepted & Implementer (review pending)\\
+D-016 & 2026-11-19 & On-chain: only fingerprints and custody events; files and personal data off-chain & Accepted & Brief + Implementer (review pending)\\
+D-017 & 2026-11-19 & Canonical manifest = RFC 8785 JCS; no floating-point numbers & Accepted & Implementer (review pending)\\
+D-018 & 2026-11-19 & Bind artefacts with a salted RFC 6962 Merkle tree & Accepted & Implementer (review pending)\\
+D-019 & 2026-11-19 & 12 evidence classes (provisional) & Accepted & Implementer $\rightarrow$ User\\
+D-020 & 2026-11-19 & Identity-check methods: pHash, symmetric 3D (ICP), seal IDs; thresholds illustrative & Accepted & Implementer (review pending)\\
+D-021 & 2026-11-19 & Input specification as JSON Schema; report appendix generated from it & Accepted & Implementer (review pending)\\
+D-022 & 2026-11-19 & Report in LaTeX in outputs/; internal, rigorous, includes Indian law & Accepted & User\\
+D-023 & 2026-11-19 & Separate network-bft/; keep the authors' Raft network unchanged & Accepted & Implementer (review pending)\\
+D-024 & 2026-11-19 & Hyperledger Fabric 3.1.5 for the BFT network & Accepted & Implementer (review pending)\\
+D-025 & 2026-11-19 & cryptogen identities; separate orderer and peer MSPs per agency & Accepted (test phase) & Implementer (review pending)\\
+D-026 & 2026-11-19 & Default endorsement: majority of agency peers (2 of 3) & Accepted (interim) & Implementer (review pending)\\
+D-027 & 2026-11-19 & Court orderer on port 11050 (9050 taken by Tor) & Accepted & Implementer\\
+D-028 & 2026-11-19 & Deterministic chaincode packages; services use the approved package ID & Accepted & Implementer\\
+D-029 & 2026-11-19 & Gateway identity/peer paths configurable by env vars; defaults unchanged & Accepted & Implementer (review pending)\\
+D-030 & 2026-11-19 & Block validation left as in the Fabric BFT sample; peer-side quorum check to be verified & Superseded by D-050 & Implementer\\
+D-031 & 2026-11-19 & Every decision is recorded in this log & Accepted & User\\
+D-032 & 2026-11-19 & Autonomous run M0–M5 on branch prototype/m0-m5 & Accepted & User\\
+D-033 & 2026-11-19 & Resolve P-01..P-12 with the recommended options for this run & Accepted & Implementer (delegated) (review pending)\\
+D-034 & 2026-11-19 & Apply stash@\{0\} as the "improved v1" baseline (P-01) & Accepted & Implementer (delegated) (review pending)\\
+D-035 & 2026-11-19 & Users and roles via Fabric CA per agency, reusing the cryptogen org CA (P-02) & Accepted & Implementer (delegated) (review pending)\\
+D-036 & 2026-11-19 & Role model and prototype users & Accepted & Implementer (delegated) (review pending)\\
+D-037 & 2026-11-19 & New JavaScript chaincode evidence in chaincode-v2/ (P-03, P-09, P-10, P-11) & Accepted & Implementer (delegated) (review pending)\\
+D-038 & 2026-11-19 & Inter-agency transfer needs both agencies: key-level endorsement (P-04) & Accepted & Implementer (delegated) (review pending)\\
+D-039 & 2026-11-19 & Evidence store: MinIO, AES-256-GCM per file, content-addressed (P-05, P-06) & Partly superseded by D-045 (storage backend) & Implementer (delegated) (review pending)\\
+D-040 & 2026-11-19 & Hash in browser (SHA-256) and in gateway (SHA-256 + SHA3-256), mismatch rejected (P-07) & Accepted & Implementer (delegated) (review pending)\\
+D-041 & 2026-11-19 & Port JCS/Merkle/hashing to JS with cross-tests against Python vectors (P-08) & Accepted & Implementer (delegated) (review pending)\\
+D-042 & 2026-11-19 & New gateway-v2/ and frontend-v2/; the authors' code stays untouched & Accepted & Implementer (delegated) (review pending)\\
+D-043 & 2026-11-19 & Prototype login: local user file, scrypt-hashed passwords, in-memory sessions & Accepted & Implementer (delegated) (review pending)\\
+D-044 & 2026-11-19 & BFT network rebuilt from scratch with per-chaincode service names & Accepted & Implementer (delegated) (review pending)\\
+D-045 & 2026-11-19 & Evidence store backend: encrypted content-addressed files in the gateway (not MinIO) & Accepted & Implementer (delegated) (review pending)\\
+D-046 & 2026-11-19 & Browser acceptance tests with playwright-core driving the system Chromium & Accepted & Implementer (delegated) (review pending)\\
+D-047 & 2026-11-19 & UI scope and behaviour: role-aware actions, browser hashing shown before upload, reasons mandatory & Accepted & Implementer (delegated) (review pending)\\
+D-048 & 2026-11-20 & Identity checks (L2) run by the app via the Python reference tool; reference fingerprints computed at registration & Accepted & Implementer (delegated) (review pending)\\
+D-049 & 2026-11-20 & Court outputs as print-ready HTML (custody report, BSA s.63 Parts A/B) + JSON verification bundle; PDF via the browser & Accepted & Implementer (delegated) (review pending)\\
+D-050 & 2026-11-20 & Peers require 3-of-4 consenter signatures on every block: Fabric 3 sets this automatically for BFT (resolves D-030) & Accepted & Implementer (delegated)\\
+D-051 & 2026-11-20 & Evaluation method: own load generator (not Caliper); BFT-4 vs a Raft-4 control on the identical network & Accepted & Implementer (delegated) (review pending)\\
+\bottomrule
+\end{longtable}

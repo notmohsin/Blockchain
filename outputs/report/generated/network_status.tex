@@ -21,3 +21,5 @@ The BFT network of \cref{fig:topology} is implemented in \code{CustodyChain/back
 \end{table}
 
 The web gateway of the original prototype was made configurable through environment variables (defaults unchanged) and works against the BFT network through the Police peer. The recovery and view-change times reflect the test configuration (\code{LeaderHeartbeatTimeout} 1~min, \code{ViewChangeTimeout} 20~s, request complaint timeout 20~s). They can be tuned, but faster failure detection increases spurious view changes. With about 370~MiB for the whole network, the laptop can comfortably run larger configurations, for example 7 orderers ($f=2$), if required. The Fabric v3 test images are designed for single-host testing; production would place each agency's nodes on its own infrastructure.
+
+Blocks are accepted by peers only with signatures of 3 of the 4 consenters: for BFT channels Fabric 3.1.5 derives the \code{BlockValidation} policy from the consenter mapping automatically (verified in the deployed configuration; D-050, \cref{sec:eval}).

@@ -54,8 +54,17 @@ async function main() {
     console.log(`Benchmark '${label}': levels ${LEVELS.join(', ')}, >= ${MIN_TX} tx per level\n`);
     const fir = firSeq++;
     const target = record(fir, 1);
-    await fabric.submit(IO, 'RegisterEvidence', [JSON.stringify(target), 'benchmark target item', '']);
-    const results = { label, date: new Date().toISOString(), host: { cpus: require('os').cpus().length, mem_gb: Math.round(require('os').totalmem() / 2 ** 30) }, ops: {} };
+    // Warm-up (same for every configuration): right after a network is built, service discovery may not yet know
+    // which peers run the chaincode ("no combination of peers ... endorsement policy"). Retry for up to 3 minutes.
+    for (let i = 0; ; i++) {
+        try { await fabric.submit(IO, 'RegisterEvidence', [JSON.stringify(target), 'benchmark target item', '']); break; } catch (e) {
+            if (i >= 36 || !/FAILED_PRECONDITION|endorsement policy|UNAVAILABLE/.test(e.message)) throw e;
+            if (i === 0) console.log('  waiting for service discovery to converge...');
+            await new Promise((r) => setTimeout(r, 5000));
+        }
+    }
+    for (let i = 0; i < 5; i++) await fabric.evaluate(IO, 'GetEvidence', target.evidence_id);
+    const results = { label, date: new Date().toISOString(), host: { cpus: require('os').cpus().length, mem_gb: Math.round(require('os').totalmem() / 2 ** 30), loadavg_at_start: require('os').loadavg().map((x) => Number(x.toFixed(2))) }, ops: {} };
     const ops = {
         'RecordEvent(ACCESS)': () => async () => fabric.submit(IO, 'RecordEvent', [target.evidence_id, 'ACCESS', '{"purpose":"benchmark"}', 'benchmark read access', '']),
         RegisterEvidence: () => { const f = firSeq++; return async (k) => fabric.submit(IO, 'RegisterEvidence', [JSON.stringify(record(f, k + 1)), 'benchmark registration', '']); },

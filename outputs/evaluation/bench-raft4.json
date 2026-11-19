@@ -1,0 +1,181 @@
+{
+  "label": "raft4",
+  "date": "2026-11-19T16:35:29.755Z",
+  "host": {
+    "cpus": 12,
+    "mem_gb": 15
+  },
+  "ops": {
+    "RecordEvent(ACCESS)": [
+      {
+        "concurrency": 1,
+        "n": 40,
+        "mean_ms": 126,
+        "p50_ms": 128,
+        "p95_ms": 152,
+        "max_ms": 154,
+        "failures": 0,
+        "wall_s": 5.03,
+        "throughput_tps": 7.95
+      },
+      {
+        "concurrency": 4,
+        "n": 40,
+        "mean_ms": 129,
+        "p50_ms": 128,
+        "p95_ms": 152,
+        "max_ms": 158,
+        "failures": 0,
+        "wall_s": 1.3,
+        "throughput_tps": 30.85
+      },
+      {
+        "concurrency": 8,
+        "n": 80,
+        "mean_ms": 187,
+        "p50_ms": 182,
+        "p95_ms": 229,
+        "max_ms": 239,
+        "failures": 0,
+        "wall_s": 1.9,
+        "throughput_tps": 42.18
+      },
+      {
+        "concurrency": 16,
+        "n": 160,
+        "mean_ms": 233,
+        "p50_ms": 229,
+        "p95_ms": 341,
+        "max_ms": 393,
+        "failures": 0,
+        "wall_s": 2.38,
+        "throughput_tps": 67.11
+      },
+      {
+        "concurrency": 32,
+        "n": 320,
+        "mean_ms": 331,
+        "p50_ms": 331,
+        "p95_ms": 474,
+        "max_ms": 640,
+        "failures": 0,
+        "wall_s": 3.38,
+        "throughput_tps": 94.81
+      }
+    ],
+    "RegisterEvidence": [
+      {
+        "concurrency": 1,
+        "n": 40,
+        "mean_ms": 127,
+        "p50_ms": 127,
+        "p95_ms": 142,
+        "max_ms": 149,
+        "failures": 0,
+        "wall_s": 5.06,
+        "throughput_tps": 7.9
+      },
+      {
+        "concurrency": 4,
+        "n": 40,
+        "mean_ms": 151,
+        "p50_ms": 151,
+        "p95_ms": 166,
+        "max_ms": 176,
+        "failures": 0,
+        "wall_s": 1.51,
+        "throughput_tps": 26.4
+      },
+      {
+        "concurrency": 8,
+        "n": 80,
+        "mean_ms": 172,
+        "p50_ms": 178,
+        "p95_ms": 203,
+        "max_ms": 228,
+        "failures": 0,
+        "wall_s": 1.77,
+        "throughput_tps": 45.32
+      },
+      {
+        "concurrency": 16,
+        "n": 160,
+        "mean_ms": 222,
+        "p50_ms": 220,
+        "p95_ms": 284,
+        "max_ms": 298,
+        "failures": 0,
+        "wall_s": 2.3,
+        "throughput_tps": 69.66
+      },
+      {
+        "concurrency": 32,
+        "n": 320,
+        "mean_ms": 373,
+        "p50_ms": 372,
+        "p95_ms": 489,
+        "max_ms": 622,
+        "failures": 0,
+        "wall_s": 3.88,
+        "throughput_tps": 82.55
+      }
+    ],
+    "GetEvidence (query)": [
+      {
+        "concurrency": 1,
+        "n": 40,
+        "mean_ms": 12,
+        "p50_ms": 13,
+        "p95_ms": 16,
+        "max_ms": 17,
+        "failures": 0,
+        "wall_s": 0.5,
+        "throughput_tps": 80.18
+      },
+      {
+        "concurrency": 4,
+        "n": 40,
+        "mean_ms": 14,
+        "p50_ms": 13,
+        "p95_ms": 20,
+        "max_ms": 21,
+        "failures": 0,
+        "wall_s": 0.15,
+        "throughput_tps": 275.55
+      },
+      {
+        "concurrency": 8,
+        "n": 80,
+        "mean_ms": 24,
+        "p50_ms": 24,
+        "p95_ms": 39,
+        "max_ms": 46,
+        "failures": 0,
+        "wall_s": 0.26,
+        "throughput_tps": 310.79
+      },
+      {
+        "concurrency": 16,
+        "n": 160,
+        "mean_ms": 52,
+        "p50_ms": 51,
+        "p95_ms": 83,
+        "max_ms": 97,
+        "failures": 0,
+        "wall_s": 0.54,
+        "throughput_tps": 293.75
+      },
+      {
+        "concurrency": 32,
+        "n": 320,
+        "mean_ms": 83,
+        "p50_ms": 84,
+        "p95_ms": 112,
+        "max_ms": 129,
+        "failures": 0,
+        "wall_s": 0.86,
+        "throughput_tps": 370.92
+      }
+    ]
+  }
+}
