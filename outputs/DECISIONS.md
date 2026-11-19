@@ -60,6 +60,8 @@ This file records every decision about the project, so that anyone (you, the pro
 | D-043 | 2026-11-19 | Prototype login: local user file, scrypt-hashed passwords, in-memory sessions | Accepted | Implementer (delegated) | **pending** |
 | D-044 | 2026-11-19 | BFT network rebuilt from scratch with per-chaincode service names | Accepted | Implementer (delegated) | **pending** |
 | D-045 | 2026-11-19 | Evidence store backend: encrypted content-addressed files in the gateway (not MinIO) | Accepted | Implementer (delegated) | **pending** |
+| D-046 | 2026-11-19 | Browser acceptance tests with `playwright-core` driving the system Chromium | Accepted | Implementer (delegated) | **pending** |
+| D-047 | 2026-11-19 | UI scope and behaviour: role-aware actions, browser hashing shown before upload, reasons mandatory | Accepted | Implementer (delegated) | **pending** |
 
 ---
 
@@ -364,6 +366,26 @@ This file records every decision about the project, so that anyone (you, the pro
   - The encryption scheme of D-039 is unchanged: per-file AES-256-GCM, with the data key wrapped by the agency master key.
   - The store sits behind an interface (`put`, `get`, `has`), so an S3-compatible backend can replace it without touching the rest of the API.
 - **Limitation:** one prototype gateway serves all agencies and therefore holds all agencies' master keys. Production would run one gateway and key service per agency.
+
+### D-046 Browser acceptance tests with `playwright-core` and the system Chromium
+- **Date:** 2026-11-19 · **Status:** Accepted · **Decided by:** Implementer (delegated) · **Review: pending**
+- **Context:** M5 counts as done only when the acceptance scenario runs **through the browser**.
+- **Decision:**
+  - `frontend-v2/tests/ui-e2e.mjs` drives the installed `/usr/bin/chromium` headlessly with `playwright-core`, a dev dependency that downloads no browser.
+  - It logs in as each role user, registers a photograph and a notebook, runs the transfers, examination and court submission, and verifies files (MATCH and NO_MATCH). It also checks that actions appear only for the right roles.
+  - Screenshots go to `tests/screenshots/`; a selection is kept in `outputs/prototype-screenshots/`.
+
+### D-047 UI scope and behaviour
+- **Date:** 2026-11-19 · **Status:** Accepted · **Decided by:** Implementer (delegated) · **Review: pending**
+- **Decision:**
+  - **Registration:** the wizard covers four classes (scene photograph, physical document, physical item, digital device), built from definitions that mirror the JSON Schema (`src/lib/classes.js`).
+  - **Hashing:** each file's SHA-256 is computed and **shown in the browser before upload** (D-040). The collecting officer is shown as "taken from your certificate, not editable".
+  - **Actions:** they appear only when they are allowed: custody actions for the current custodian, accept/reject for the named receiver, registration for IOs. Every action requires a reason, which is recorded on the ledger. "Verify a file" is available to everyone.
+  - **Downloads:** each download asks for a reason and is recorded as `ACCESS`.
+  - **Single port:** the built UI is served by `gateway-v2` on port 4000. `npm run dev` (port 5174) proxies `/api` to it.
+- **Bugs found and fixed by the browser test:**
+  - a signed-in user visiting `#/login` saw the login form;
+  - "Start examination" reused a stale reason from the previous action.
 
 ---
 
