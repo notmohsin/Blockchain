@@ -1,5 +1,7 @@
 # CustodyChain: post-meeting work plan (2026-11-19)
 
+*Phases 1–3 are complete. Next steps: [`ROADMAP.md`](ROADMAP.md). Every decision: [`DECISIONS.md`](DECISIONS.md).*
+
 These are the decisions agreed after the meeting with the professor.
 
 | # | Decision |
