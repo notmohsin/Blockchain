@@ -2,6 +2,18 @@
 
 *Last updated 2026-11-19. Decisions are logged in [`DECISIONS.md`](DECISIONS.md). Completed phases 1–3 are in [`PLAN.md`](PLAN.md).*
 
+> **Status:** **M0–M5 are done** on branch `prototype/m0-m5` (autonomous run, D-032). How to run and test it: [`CustodyChain/PROTOTYPE.md`](../CustodyChain/PROTOTYPE.md).
+>
+> | Milestone | Commit | Evidence |
+> |---|---|---|
+> | M0 | `ad6c409`, `468b836` | docs committed; stash applied as "improved v1" (D-034) |
+> | M1 | `05e8b18` | agency CAs; role users; the chaincode reads `role` from the certificate |
+> | M2 | `dcd9410` | evidence chaincode, 18/18 unit tests |
+> | M3 + M4 | `ac9610f` | encrypted store + API; 34/34 end-to-end checks on the live BFT network, including the D-038 endorsement attack |
+> | M5 | `818b4af` | UI; 24/24 browser checks |
+>
+> **Remaining:** M6 (identity checks run by the app), M7 (court outputs), M8 (benchmarks and formal tamper suite), M9 (report chapters).
+
 ## 1. Where we are
 
 | Layer | State today | What the prototype needs |

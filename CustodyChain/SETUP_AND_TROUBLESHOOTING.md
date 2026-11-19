@@ -24,6 +24,8 @@ This document covers:
 | `../outputs/report/main.pdf` | Report: how evidence is fingerprinted (hashes for photos, notebooks, 3D items and so on), the Indian legal mapping, and the network design |
 | `../outputs/spec/` | Input specification (JSON Schemas) for every evidence type |
 | `../outputs/PLAN.md` | Post-meeting plan, with each phase's status |
+| `PROTOTYPE.md` | **Prototype v2 (M0–M5):** how to run and test the new chaincode, API and UI |
+| `../outputs/DECISIONS.md` | Every decision, with who made it and why |
 
 ---
 

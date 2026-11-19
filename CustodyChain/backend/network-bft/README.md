@@ -69,3 +69,12 @@ The recovery and view-change times follow the SmartBFT timeouts in `configtx/con
 - **Consensus type and consenters:** `peer channel fetch config`, decode with `configtxlator`, then read `Orderer.values.ConsensusType` and `Orderer.values.Orderers.consenter_mapping`.
 - **Quorum signatures on a block:** decode `metadata[0]` of any block as `common.Metadata`. There are 3 signatures, and each `identifier_header` names its consenter ID.
 - **Fault tolerance:** `docker stop orderer.prosecution.custodychain.local` and invoke, which still commits. Then stop a second orderer and invoke, which does not commit.
+
+## Prototype v2 additions (M1, D-035, D-036, D-044)
+
+- **Agency CAs:** `ca.police` (7054), `ca.fsl` (8054) and `ca.court` (9054) run Fabric CA 1.5.12, signing with each agency's existing cryptogen CA, so users they enrol are trusted by the channel as is.
+- **Role users:** `./network.sh users` enrols `io.sharma`, `malkhana.desai`, `examiner.mehta` and `clerk.rao`, each with `role=<role>` in their certificate.
+- **Two chaincodes:** `custody` (the authors', improved v1) and `evidence` (v2, `../chaincode-v2`, `./network.sh deploy-v2`). Chaincode service containers are named `<agency>-<chaincode>-cc`.
+- **`./network.sh all`** now runs up + channel + deploy + deploy-v2 + users. `stop`/`start` include the CAs.
+
+The application on top of this network is described in [`../../PROTOTYPE.md`](../../PROTOTYPE.md).
