@@ -155,7 +155,9 @@ function printHelp() {
     println "      \033[0;32mcreateChannel\033[0m - Create and join a channel after the network is created"
     println "      \033[0;32mdeployCC\033[0m - Deploy a chaincode to a channel (defaults to asset-transfer-basic)"
     println "      \033[0;32mcc\033[0m - chaincode functions, use \"network.sh cc -h\" for options"
-    println "      \033[0;32mdown\033[0m - Bring down the network"
+    println "      \033[0;32mstop\033[0m - Stop all Fabric containers, KEEPING ledger, state and certificates"
+    println "      \033[0;32mstart\033[0m - Resume a stopped network from its persisted state"
+    println "      \033[0;32mdown\033[0m - WIPE the network: deletes ledgers, state, certificates (irreversible)"
     println
     println "    Flags:"
     println "    Used with \033[0;32mnetwork.sh prereq\033[0m"

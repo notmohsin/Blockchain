@@ -135,14 +135,21 @@ startDockerContainer() {
   # start the docker container
   if [ "$CCAAS_DOCKER_RUN" = "true" ]; then
     infoln "Starting the Chaincode-as-a-Service docker container..."
+    # Remove any stale container from a previous deploy: it would serve an old package ID
+    # and the peer would refuse it, making every transaction hang.
+    ${CONTAINER_CLI} rm -f peer0org1_${CC_NAME}_ccaas peer0org2_${CC_NAME}_ccaas >/dev/null 2>&1 || true
     set -x
-    ${CONTAINER_CLI} run --rm -d --name peer0org1_${CC_NAME}_ccaas  \
+    # No --rm: the containers must survive `network.sh stop` / `network.sh start`.
+    # The labels let stop/start (and down) find them alongside the other Fabric containers.
+    ${CONTAINER_CLI} run -d --name peer0org1_${CC_NAME}_ccaas  \
+                  --label service=hyperledger-fabric --label fabric.role=chaincode \
                   --network fabric_test \
                   -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:${CCAAS_SERVER_PORT} \
                   -e CHAINCODE_ID=$PACKAGE_ID -e CORE_CHAINCODE_ID_NAME=$PACKAGE_ID \
                     ${CC_NAME}_ccaas_image:latest
 
-    ${CONTAINER_CLI} run  --rm -d --name peer0org2_${CC_NAME}_ccaas \
+    ${CONTAINER_CLI} run -d --name peer0org2_${CC_NAME}_ccaas \
+                  --label service=hyperledger-fabric --label fabric.role=chaincode \
                   --network fabric_test \
                   -e CHAINCODE_SERVER_ADDRESS=0.0.0.0:${CCAAS_SERVER_PORT} \
                   -e CHAINCODE_ID=$PACKAGE_ID -e CORE_CHAINCODE_ID_NAME=$PACKAGE_ID \

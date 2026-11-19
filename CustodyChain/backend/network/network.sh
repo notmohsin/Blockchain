@@ -460,6 +460,55 @@ function networkDown() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# Persistence: stop/start WITHOUT deleting anything.
+# Ledgers live in named Docker volumes and the crypto material in organizations/;
+# both survive these two commands, a Docker restart, and a laptop reboot.
+# Only `network.sh down` deletes them.
+# ---------------------------------------------------------------------------
+
+# All Fabric containers (CAs, orderers, peers, CouchDB, chaincode services) carry this label.
+function fabricContainers() {
+  ${CONTAINER_CLI} ps -a $1 --filter label=service=hyperledger-fabric --format '{{.Names}}'
+}
+
+function networkStop() {
+  local running
+  running=$(fabricContainers)
+  if [ -z "$running" ]; then
+    warnln "No Fabric containers found. Nothing to stop."
+    return 0
+  fi
+  infoln "Stopping Fabric containers (ledger, state and certificates are kept):"
+  # Chaincode first, then peers, orderers and CAs: the reverse of the start order
+  local order
+  order=$(echo "$running" | grep '_ccaas$'; echo "$running" | grep -E '^peer[0-9]+\.'; \
+          echo "$running" | grep -E '^couchdb'; echo "$running" | grep -E '^orderer'; \
+          echo "$running" | grep -E '^ca_')
+  for c in $order; do
+    ${CONTAINER_CLI} stop "$c" >/dev/null && println "  stopped  $c"
+  done
+  successln "Network stopped. Resume with: ./network.sh start"
+}
+
+function networkStart() {
+  local all
+  all=$(fabricContainers)
+  if [ -z "$all" ]; then
+    fatalln "No stopped Fabric network to resume. Create one with: ./network.sh up createChannel ... && ./network.sh deployCCAAS ..."
+  fi
+  infoln "Starting Fabric containers from their persisted state:"
+  # Dependency order: CAs -> orderers -> state DBs -> peers -> chaincode services
+  local group c
+  for group in '^ca_' '^orderer' '^couchdb' '^peer[0-9]+\.' '_ccaas$'; do
+    for c in $(echo "$all" | grep -E "$group"); do
+      ${CONTAINER_CLI} start "$c" >/dev/null && println "  started  $c"
+    done
+    sleep 2
+  done
+  successln "Network resumed. Restart the gateway (node src/app.js) if it was stopped."
+}
+
 . ./network.config
 
 # use this as the default docker-compose yaml definition
@@ -647,7 +696,13 @@ elif [ "$MODE" == "createChannel" ]; then
   infoln "Creating channel '${CHANNEL_NAME}'."
   infoln "If network is not up, starting nodes with CLI timeout of '${MAX_RETRY}' tries and CLI delay of '${CLI_DELAY}' seconds and using database '${DATABASE} ${CRYPTO_MODE}"
   createChannel $BFT
+elif [ "$MODE" == "stop" ]; then
+  networkStop
+elif [ "$MODE" == "start" ]; then
+  networkStart
 elif [ "$MODE" == "down" ]; then
+  warnln "WIPING the network: ledgers, world state, certificates and chaincode containers will be DELETED."
+  warnln "To pause without losing data, use: ./network.sh stop"
   infoln "Stopping network"
   networkDown
 elif [ "$MODE" == "restart" ]; then
