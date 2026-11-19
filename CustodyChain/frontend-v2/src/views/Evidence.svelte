@@ -95,6 +95,23 @@
       await load();
     } catch (e) { error = e.message; }
   }
+  // M7 (D-049): court outputs open in a new tab (Print -> Save as PDF); generating one is recorded as ACCESS
+  async function openDoc(kind, part) {
+    const w = window.open('', '_blank');
+    try {
+      if (kind === 'bundle') {
+        const b = await api.bundle(id);
+        const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: 'application/json' }));
+        Object.assign(document.createElement('a'), { href: url, download: `${id}.bundle.json` }).click();
+        w && w.close();
+      } else {
+        const blob = kind === 'report' ? await api.report(id) : await api.bsa63(id, part);
+        const html = await blob.text();
+        if (w) { w.document.open(); w.document.write(html); w.document.close(); }
+      }
+      await load();
+    } catch (e) { w && w.close(); error = e.message; }
+  }
   async function showProof(aid) { try { proof = await api.proof(id, aid); } catch (e) { error = e.message; } }
 
   function summary(ev) {
@@ -259,6 +276,12 @@
             {checks.manifest_sha256_matches_ledger && checks.merkle_root_matches_ledger ? '✓ Off-chain manifest matches the ledger' : '✗ Off-chain manifest does NOT match the ledger'}</p>
         {/if}
         <p class="text-xs text-ink-400">Registered {human(rec.registered_at)} by {rec.registered_by.cn}. Seal: {rec.seal_ids?.join(', ') || 'none'}</p>
+        <div class="flex flex-wrap gap-2 pt-2" data-testid="court-outputs">
+          <button class="btn-ghost !px-2.5 !py-1.5 text-xs" onclick={() => openDoc('report')} data-doc="report">Custody report</button>
+          <button class="btn-ghost !px-2.5 !py-1.5 text-xs" onclick={() => openDoc('bsa63', 'A')} data-doc="bsa-a">BSA §63 Part A</button>
+          <button class="btn-ghost !px-2.5 !py-1.5 text-xs" onclick={() => openDoc('bsa63', 'B')} data-doc="bsa-b">BSA §63 Part B</button>
+          <button class="btn-ghost !px-2.5 !py-1.5 text-xs" onclick={() => openDoc('bundle')} data-doc="bundle">Verification bundle</button>
+        </div>
         {#if rec.children?.length}<p class="text-xs">Derived items: {#each rec.children as c}<a class="font-mono text-seal-600 hover:underline" href="#/evidence/{encodeURIComponent(c)}">{c}</a> {/each}</p>{/if}
       </section>
       {#if manifest}

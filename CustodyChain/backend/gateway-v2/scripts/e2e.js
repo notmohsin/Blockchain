@@ -200,11 +200,42 @@ async function main() {
     r = await call(clerk, 'GET', `/api/evidence/${nbId}/manifest`);
     check(r.data.checks.manifest_sha256_matches_ledger && r.data.checks.merkle_root_matches_ledger, 'stored manifest matches the ledger fingerprints');
 
+    // 7b. M7 court outputs (D-049)
+    r = await call(clerk, 'GET', `/api/evidence/${nbId}/report`);
+    const html = r.data.toString();
+    check(r.status === 200 && html.includes('MATCHES (manifest SHA-256 and Merkle root)') && html.includes(r.headers ? nbId : nbId) && (html.match(/tx [0-9a-f]{64}/g) || []).length >= 10,
+        'custody report: manifest re-verified, every ledger event listed with its tx id');
+    r = await call(clerk, 'GET', `/api/evidence/${photoId}/bsa63?part=A`);
+    const cert = r.data.toString();
+    const photoSha = sha(photo);
+    check(r.status === 200 && cert.includes('PART A') && cert.includes(photoSha) && /<span class="box">✓<\/span>Mobile/.test(cert) && cert.includes('IMEI 356938035643809'),
+        'BSA s.63 Part A draft: device ticked (Mobile), IMEI and the SHA256 of the photo pre-filled');
+    r = await call(ex, 'GET', `/api/evidence/${nbId}/bsa63?part=B`);
+    check(r.status === 200 && r.data.toString().includes('Dr. K. Mehta') && r.data.toString().includes('PART B'), 'BSA s.63 Part B draft for the FSL examiner');
+    r = await call(clerk, 'GET', `/api/evidence/${nbId}/bundle`);
+    const bundle = r.data;
+    const os = require('os'); const { execFileSync } = require('child_process');
+    const bdir = fs.mkdtempSync(path.join(os.tmpdir(), 'bundle-'));
+    fs.writeFileSync(path.join(bdir, 'manifest.json'), JSON.stringify(bundle.manifest));
+    fs.writeFileSync(path.join(bdir, 'ledger-record.json'), JSON.stringify(bundle.ledger_record));
+    for (const a of bundle.manifest.artefacts) {
+        const src = a.role === 'cover_photo' ? 'notebook/cover.jpg' : `notebook/${a.file_name}`;
+        fs.writeFileSync(path.join(bdir, a.file_name), file(src, a.file_name));
+    }
+    const tool = path.resolve(__dirname, '../../../../outputs/tools/evidence_hash.py');
+    let pyOut = '';
+    try { pyOut = execFileSync('python3', [tool, 'verify', path.join(bdir, 'manifest.json'), '--base', bdir, '--ledger', path.join(bdir, 'ledger-record.json')], { cwd: path.dirname(tool) }).toString(); } catch (e) { pyOut = String(e.stdout || e.message); }
+    check(/OK: all artefacts/.test(pyOut), 'verification bundle checks out with the independent Python tool', pyOut.trim().split('\n').pop());
+    fs.writeFileSync(path.join(bdir, 'page_004.png'), file('notebook/forged/page_004.png', 'f'));
+    try { pyOut = execFileSync('python3', [tool, 'verify', path.join(bdir, 'manifest.json'), '--base', bdir, '--ledger', path.join(bdir, 'ledger-record.json')], { cwd: path.dirname(tool) }).toString(); } catch (e) { pyOut = String(e.stdout || ''); }
+    check(/A005 .*sha256 mismatch/.test(pyOut), 'the same tool flags a substituted page 4 (A005) in the bundle');
+    fs.rmSync(bdir, { recursive: true, force: true });
+
     // 8. history: actors come from certificates; order is the custody story
     r = await call(io, 'GET', `/api/evidence/${nbId}`);
     const types = r.data.history.map((e) => e.type);
     const expect = ['REGISTER', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'VERIFY_IDENTITY', 'VERIFY_IDENTITY', 'VERIFY_IDENTITY', 'VERIFY_IDENTITY', 'EXAMINE_START', 'EXAMINE_END', 'RESEAL',
-        'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'SUBMIT_COURT', 'VERIFY_INTEGRITY', 'ACCESS'];
+        'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'SUBMIT_COURT', 'VERIFY_INTEGRITY', 'ACCESS', 'ACCESS', 'ACCESS', 'ACCESS'];
     check(JSON.stringify(types) === JSON.stringify(expect), `notebook history has the full custody chain (${types.length} events)`, types.join(' > '));
     const actors = [...new Set(r.data.history.map((e) => `${e.actor.cn}/${e.actor.msp}/${e.actor.role}`))];
     check(actors.length === 4, `actors taken from certificates: ${actors.join(', ')}`);

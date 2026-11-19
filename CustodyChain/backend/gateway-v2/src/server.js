@@ -27,6 +27,7 @@ const fp = require('./lib/fingerprint');
 const { EvidenceStore } = require('./store');
 const { buildManifest, ledgerRecord, badRequest } = require('./manifest');
 const l2 = require('./l2');
+const reports = require('./reports');
 
 const store = new EvidenceStore(cfg.STORE_DIR, cfg.KEY_DIR);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: cfg.MAX_FILE_MB * 1024 * 1024, files: 60 } });
@@ -297,6 +298,45 @@ api.post('/evidence/:id/identity-check', upload.any(), wrap(async (req, res) => 
         JSON.stringify({ verification, pairs: pairs.map(({ query, ...p }) => ({ file: query, ...p })), notes, tool: 'evidence_hash.py l2-batch' }),
         req.body.reason || 'Identity check against the reference captures', req.body.location || '']);
     res.json({ result, pairs, notes, verification, event });
+}));
+
+
+// ------------------------------------------------------------------ M7: court outputs, D-049
+async function courtInputs(req) {
+    const [record, history] = await Promise.all([fabric.evaluate(req.user, 'GetEvidence', req.params.id), fabric.evaluate(req.user, 'GetHistory', req.params.id)]);
+    const manifest = loadManifest(record);
+    if (!manifest) throw Object.assign(new Error('manifest not in this evidence store'), { status: 404 });
+    return { record, history, manifest };
+}
+const logAccess = (req, purpose) => fabric.submit(req.user, 'RecordEvent', [req.params.id, 'ACCESS', JSON.stringify({ purpose }), `Generated ${purpose}`, '']);
+
+api.get('/evidence/:id/report', wrap(async (req, res) => {
+    const x = await courtInputs(req);
+    const html = reports.custodyReport({ ...x, generatedBy: req.user, generatedAt: new Date().toISOString() });
+    await logAccess(req, 'custody report');
+    res.type('html').send(html);
+}));
+
+api.get('/evidence/:id/bsa63', wrap(async (req, res) => {
+    const part = req.query.part === 'B' ? 'B' : 'A';
+    const x = await courtInputs(req);
+    const certifier = part === 'B' ? (req.user.role === 'examiner' ? req.user : null) : (x.manifest.collection.collected_by.pki_subject && req.user.role === 'io' ? req.user : null);
+    const html = reports.bsa63({ record: x.record, manifest: x.manifest, part, certifier });
+    await logAccess(req, `BSA s.63 certificate draft, Part ${part}`);
+    res.type('html').send(html);
+}));
+
+api.get('/evidence/:id/bundle', wrap(async (req, res) => {
+    const x = await courtInputs(req);
+    const ledger_record = { evidence_id: x.record.evidence_id, evidence_class: x.record.evidence_class, parent_evidence_id: x.record.parent_evidence_id,
+        manifest_sha256: x.record.manifest_sha256, merkle_root: x.record.merkle_root, artefact_count: x.record.artefact_count, spec_version: x.record.spec_version };
+    await logAccess(req, 'verification bundle');
+    res.setHeader('Content-Disposition', `attachment; filename="${x.record.evidence_id}.bundle.json"`);
+    res.json({ bundle_version: '1', generated_at: new Date().toISOString(), generated_by: { username: req.user.username, msp: req.user.msp },
+        ledger_record, history: x.history, manifest: x.manifest,
+        how_to_verify: ['Save "manifest" as manifest.json and "ledger_record" as ledger-record.json, and put the evidence files in a folder.',
+            'Better: read the ledger record yourself from any agency peer (chaincode "evidence", GetEvidence) instead of trusting this bundle.',
+            'python3 evidence_hash.py verify manifest.json --base <folder> --ledger ledger-record.json'] });
 }));
 
 app.use('/api', api);

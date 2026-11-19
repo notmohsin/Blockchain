@@ -139,9 +139,20 @@ try {
   const reasons = await page.$$eval('[data-testid=timeline] li', (els) => els.map((e) => e.querySelector('.text-ink-600')?.textContent));
   check(reasons.filter((r) => /Identity check/.test(r || '')).length === 1, 'each event keeps its own reason (no stale form text)');
   const want = ['REGISTER', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'VERIFY_IDENTITY', 'EXAMINE_START', 'EXAMINE_END', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'SUBMIT_COURT', 'VERIFY_INTEGRITY'];
+  // (court outputs below add ACCESS events after this check)
   check(JSON.stringify(tl) === JSON.stringify(want), `timeline shows the full chain (${tl.length} events)`, tl.join(' > '));
   await shot('06-court-evidence-page');
 
+  // M7 court outputs: open in a new tab; save sample PDFs for the documentation
+  const SAMPLES = path.resolve(here, '../../../outputs/prototype-samples');
+  fs.mkdirSync(SAMPLES, { recursive: true });
+  for (const [doc, name, marker] of [['report', 'custody-report', 'Chain of custody'], ['bsa-a', 'bsa63-part-a', 'PART A']]) {
+    const [popup] = await Promise.all([page.context().waitForEvent('page'), page.click(`[data-doc=${doc}]`)]);
+    await popup.waitForFunction((m) => document.body && document.body.textContent.includes(m), marker, { timeout: 60000 });
+    await popup.pdf({ path: path.join(SAMPLES, `${name}.pdf`), format: 'A4', printBackground: true });
+    check(fs.statSync(path.join(SAMPLES, `${name}.pdf`)).size > 10000, `${name} opens and prints to PDF`);
+    await popup.close();
+  }
   await page.goto(`${BASE}/#/verify/${encodeURIComponent(photoId)}`);
   await page.setInputFiles('#vf', path.join(WE, 'photo/IMG_0001_knife_removed.jpg'));
   await page.click('form button[type=submit]');

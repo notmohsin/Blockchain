@@ -63,6 +63,7 @@ This file records every decision about the project, so that anyone (you, the pro
 | D-046 | 2026-11-19 | Browser acceptance tests with `playwright-core` driving the system Chromium | Accepted | Implementer (delegated) | **pending** |
 | D-047 | 2026-11-19 | UI scope and behaviour: role-aware actions, browser hashing shown before upload, reasons mandatory | Accepted | Implementer (delegated) | **pending** |
 | D-048 | 2026-11-20 | Identity checks (L2) run by the app via the Python reference tool; reference fingerprints computed at registration | Accepted | Implementer (delegated) | **pending** |
+| D-049 | 2026-11-20 | Court outputs as print-ready HTML (custody report, BSA s.63 Parts A/B) + JSON verification bundle; PDF via the browser | Accepted | Implementer (delegated) | **pending** |
 
 ---
 
@@ -404,6 +405,21 @@ This file records every decision about the project, so that anyone (you, the pro
   - The tool runs with its own directory as the working directory and *without* `python -I`. In isolated mode, user-installed scipy is invisible, and the 3D comparison silently fell back to a brute-force search that took minutes.
   - The fallback now subsamples to at most 4,000 points.
 - **Limitation:** the thresholds remain the illustrative values of D-020 until they are calibrated on real captures.
+
+### D-049 Court outputs: custody report, BSA s.63 certificate drafts, verification bundle
+- **Date:** 2026-11-20 · **Status:** Accepted · **Decided by:** Implementer (delegated) · **Review: pending**
+- **Context:** Roadmap M7. A court needs a readable custody record, the s.63(4)(c) certificate (Part A by the party, Part B by an expert, both stating hash values and algorithm), and a way to check everything independently.
+- **Decision:**
+  - **`GET /api/evidence/:id/report`:** a print-ready HTML custody report generated **from the ledger events and the off-chain manifest**. The manifest is re-verified against the ledger at generation time, and the result is printed in the report. It contains the case, item, fingerprints, every artefact with SHA-256 and SHA3-256, the full chain of custody (time, actor, agency, role, reason, transaction ID), seals and identity checks, and verification instructions.
+  - **`GET /api/evidence/:id/bsa63?part=A|B`:** the Schedule certificate pre-filled from the manifest:
+    - **Device:** device type ticked using the Schedule's own list; make and model, serial number, and IMEI/UIN/UID/MAC/Cloud ID.
+    - **Hash values:** every artefact's SHA-256, with SHA3-256 under "Other".
+    - Name, date, time, place and signature are left blank. The certificate is a **draft that the certifying person must check and sign**, and it says so on its face.
+  - **`GET /api/evidence/:id/bundle`:** a JSON bundle (ledger record, custody history, manifest), checkable with `evidence_hash.py verify --ledger`.
+  - Every report, certificate or bundle generated is recorded as an `ACCESS` event, with its purpose.
+  - **PDF:** made by the browser's Print → Save as PDF. The UI test produces sample PDFs this way. This avoids a server-side PDF engine.
+- **Alternatives:** server-side PDF (headless Chromium in the gateway, heavy) or LaTeX templates (needs TeX on the server).
+- **Limitation:** the ledger record inside a bundle comes from the gateway. A fully independent verifier should read the record from any agency's peer, which the instructions state.
 
 ---
 
