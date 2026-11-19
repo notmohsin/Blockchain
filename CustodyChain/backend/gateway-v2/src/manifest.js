@@ -12,6 +12,7 @@ const path = require('path');
 const Ajv2020 = require('ajv/dist/2020');
 const cfg = require('./config');
 const fp = require('./lib/fingerprint');
+const l2 = require('./l2');
 
 let validators = null;
 function schemas() {
@@ -42,7 +43,7 @@ function nowIst() {
  * @param user       logged-in user (public profile) + certSubject
  * @param evidenceId assigned ID; parentId for derived items
  */
-function buildManifest({ draft, files, clientHashes, user, certSubject, evidenceId, parentId }) {
+function buildManifest({ draft, files, clientHashes, user, certSubject, evidenceId, parentId, phashByField = {} }) {
     if (!draft || typeof draft !== 'object') throw badRequest('draft manifest is required');
     const m = JSON.parse(JSON.stringify(draft));
     m.spec_version = '1.0';
@@ -73,9 +74,19 @@ function buildManifest({ draft, files, clientHashes, user, certSubject, evidence
         a.hashed_at = hashedAt;
         a.hashed_on = claimed ? 'browser before upload; re-verified by gateway' : 'gateway on receipt';
         a.leaf_salt = crypto.randomBytes(32).toString('hex');
+        a._ph = phashByField[a.file_field] || null;
+        a._mesh = l2.isMesh(a.media_type, f.originalname);
         delete a.file_field;
         blobs.push({ buffer: f.buffer, media_type: a.media_type, file_name: f.originalname });
     });
+    // D-048: reference fingerprints for later identity checks, protected by the manifest hash
+    m.identity_fingerprints = m.identity_fingerprints || [];
+    for (const a of m.artefacts) {
+        if (a._ph) m.identity_fingerprints.push({ method: 'phash-dct-64', method_version: '1', source_artefact_ids: [a.artefact_id], value: a._ph, match_rule: l2.RULES['phash-dct-64'].rule });
+        if (a._mesh) m.identity_fingerprints.push({ method: 'mesh-icp-rms', method_version: '1', source_artefact_ids: [a.artefact_id], value: a.sha256, match_rule: l2.RULES['mesh-icp-rms'].rule });
+        delete a._ph; delete a._mesh;
+    }
+    if (!m.identity_fingerprints.length) delete m.identity_fingerprints;
     if (m.packaging && Array.isArray(m.packaging.seal_ids) && m.packaging.seal_ids.length) {
         m.identity_fingerprints = m.identity_fingerprints || [];
         for (const sid of m.packaging.seal_ids) {

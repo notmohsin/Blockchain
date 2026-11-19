@@ -41,6 +41,7 @@ export const api = {
   reject: (id, body) => request('POST', `/api/evidence/${encodeURIComponent(id)}/reject`, body),
   cancel: (id, body) => request('POST', `/api/evidence/${encodeURIComponent(id)}/cancel`, body),
   event: (id, body) => request('POST', `/api/evidence/${encodeURIComponent(id)}/events`, body),
+  identityCheck: (id, form) => request('POST', `/api/evidence/${encodeURIComponent(id)}/identity-check`, form, true),
   verify: (id, form) => request('POST', `/api/evidence/${encodeURIComponent(id)}/verify`, form, true),
   proof: (id, aid) => request('GET', `/api/evidence/${encodeURIComponent(id)}/proof/${aid}`),
   download: (id, aid, reason) => request('GET', `/api/evidence/${encodeURIComponent(id)}/artefacts/${aid}?reason=${encodeURIComponent(reason)}`),

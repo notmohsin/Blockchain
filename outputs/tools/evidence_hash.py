@@ -293,6 +293,12 @@ def compare_mesh(ref_path, query_path, iterations: int = 40) -> dict:
     and report the RMS / 95th-percentile / max nearest-neighbour deviation in the scan's units (mm)."""
     import numpy as np
     ref, qry = load_ply_points(ref_path), load_ply_points(query_path)
+    try:
+        import scipy.spatial  # noqa: F401  (fast k-d tree available)
+    except ImportError:       # brute-force fallback is O(n*m): subsample deterministically to stay usable
+        rng = np.random.default_rng(0)
+        if len(ref) > 4000: ref = ref[rng.choice(len(ref), 4000, replace=False)]
+        if len(qry) > 4000: qry = qry[rng.choice(len(qry), 4000, replace=False)]
 
     def pca_frame(x):
         c = x.mean(0)
@@ -322,6 +328,30 @@ def compare_mesh(ref_path, query_path, iterations: int = 40) -> dict:
     return {"rms_mm": round(best["rms"], 4), "p95_mm": round(best["p95"], 4), "max_mm": round(best["max"], 4),
             "max_query_to_ref_mm": round(best["max_qr"], 4), "max_ref_to_query_mm": round(best["max_rq"], 4),
             "ref_points": int(len(ref)), "query_points": int(len(qry))}
+
+def l2_batch(req: dict) -> dict:
+    """Batch interface for gateway-v2 (D-048). Jobs:
+       {"op":"phash","file":p}                        -> {"phash","dhash"}
+       {"op":"compare-image","ref":p,"query":p}       -> {"phash_ref","phash_query","hamming"}
+       {"op":"compare-mesh","ref":p,"query":p}        -> compare_mesh() result
+    Each job result carries "ok" and either the values or "error"."""
+    out = []
+    for job in req.get("jobs", []):
+        try:
+            op = job["op"]
+            if op == "phash":
+                out.append({"ok": True, "phash": phash(job["file"]), "dhash": dhash(job["file"])})
+            elif op == "compare-image":
+                a_, b_ = phash(job["ref"]), phash(job["query"])
+                out.append({"ok": True, "phash_ref": a_, "phash_query": b_, "hamming": hamming(a_, b_)})
+            elif op == "compare-mesh":
+                out.append({"ok": True, **compare_mesh(job["ref"], job["query"])})
+            else:
+                out.append({"ok": False, "error": f"unknown op {op}"})
+        except Exception as e:  # report per job; never abort the batch
+            out.append({"ok": False, "error": f"{type(e).__name__}: {e}"})
+    return {"tool": "evidence_hash.py", "method_versions": {"phash-dct-64": "1", "mesh-icp-rms": "1"}, "results": out}
+
 
 # ----------------------------------------------------------------------------------------------
 # Manifest build / verify / validate
@@ -422,12 +452,14 @@ def main(argv=None):
     s = sp.add_parser("manifest"); s.add_argument("draft"); s.add_argument("out"); s.add_argument("--base", default=".")
     s.add_argument("--demo-seed", default=None)
     s = sp.add_parser("verify"); s.add_argument("manifest"); s.add_argument("--base", default=".")
+    s.add_argument("--ledger", default=None, help="ledger record JSON (as read from the ledger) to check the manifest against")
     s = sp.add_parser("validate"); s.add_argument("file"); s.add_argument("--schema", default="evidence-manifest.schema.json")
     s = sp.add_parser("ledger-record"); s.add_argument("manifest")
     s = sp.add_parser("prove"); s.add_argument("manifest"); s.add_argument("artefact_id")
     s = sp.add_parser("phash"); s.add_argument("images", nargs="+")
     s = sp.add_parser("compare-images"); s.add_argument("a"); s.add_argument("b")
     s = sp.add_parser("compare-mesh"); s.add_argument("ref"); s.add_argument("query")
+    s = sp.add_parser("l2-batch", help="JSON jobs on stdin -> JSON results on stdout (used by gateway-v2, D-048)")
     a = ap.parse_args(argv)
 
     if a.cmd == "hash":
@@ -439,7 +471,7 @@ def main(argv=None):
         print(json.dumps(ledger_record(m), indent=2))
     elif a.cmd == "verify":
         m = _load(a.manifest)
-        probs = verify_manifest(m, Path(a.base))
+        probs = verify_manifest(m, Path(a.base), ledger=_load(a.ledger) if a.ledger else None)
         print("manifest_sha256:", manifest_hash(m))
         print("\n".join(probs) if probs else "OK: all artefacts, sizes, hashes and the Merkle root verify")
         return 1 if probs else 0
@@ -472,6 +504,8 @@ def main(argv=None):
                           "phash_hamming": hamming(pa, pb), "dhash_hamming": hamming(dhash(a.a), dhash(a.b))}, indent=2))
     elif a.cmd == "compare-mesh":
         print(json.dumps(compare_mesh(a.ref, a.query), indent=2))
+    elif a.cmd == "l2-batch":
+        print(json.dumps(l2_batch(json.load(sys.stdin))))
     return 0
 
 

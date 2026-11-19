@@ -26,6 +26,7 @@ const fabric = require('./fabric');
 const fp = require('./lib/fingerprint');
 const { EvidenceStore } = require('./store');
 const { buildManifest, ledgerRecord, badRequest } = require('./manifest');
+const l2 = require('./l2');
 
 const store = new EvidenceStore(cfg.STORE_DIR, cfg.KEY_DIR);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: cfg.MAX_FILE_MB * 1024 * 1024, files: 60 } });
@@ -74,8 +75,16 @@ async function registerFromUpload(req, parentId) {
         draft.case = { ...(draft.case || {}), fir_number: parent.case.fir_number, police_station: parent.case.police_station };
     }
     const evidenceId = await nextEvidenceId(req.user, draft);
-    const built = buildManifest({ draft, files: filesByField(req), clientHashes, user: req.user,
-        certSubject: fabric.certSubject(req.user), evidenceId, parentId });
+    const files = filesByField(req);
+    // D-048: reference pHash of every image, computed by the same tool the report uses
+    const fields = Object.keys(files);
+    let phashByField = {};
+    try {
+        const ph = await l2.phashes(fields.map((k) => ({ buffer: files[k].buffer, media_type: files[k].mimetype, name: files[k].originalname })));
+        phashByField = Object.fromEntries(fields.map((k, i) => [k, ph[i]]).filter(([, v]) => v));
+    } catch (e) { console.warn(`identity fingerprints skipped: ${e.message}`); }
+    const built = buildManifest({ draft, files, clientHashes, user: req.user,
+        certSubject: fabric.certSubject(req.user), evidenceId, parentId, phashByField });
     // Store encrypted files and the canonical manifest BEFORE anchoring, so the ledger never points at missing data.
     for (const b of built.blobs) store.put(b.buffer, { agency: req.user.org, media_type: b.media_type, uploaded_by: req.user.username, file_name: b.file_name });
     store.put(built.canonical, { agency: req.user.org, media_type: 'application/json', uploaded_by: req.user.username, file_name: `${evidenceId}.manifest.json` });
@@ -218,6 +227,76 @@ api.get('/evidence/:id/proof/:aid', wrap(async (req, res) => {
     if (!manifest) return res.status(404).json({ error: 'manifest not in this evidence store' });
     const proof = fp.proofFor(manifest, req.params.aid);
     return res.json({ ...proof, ledger_merkle_root: record.merkle_root, matches_ledger: proof.merkle_root === record.merkle_root && proof.verifies });
+}));
+
+
+// ------------------------------------------------------------------ M6: identity check (L2), D-048
+function ruleThreshold(rule) { const m = /hamming<=(\d+)/.exec(rule || ''); return m ? Number(m[1]) : l2.RULES['phash-dct-64'].threshold; }
+
+api.post('/evidence/:id/identity-check', upload.any(), wrap(async (req, res) => {
+    const record = await fabric.evaluate(req.user, 'GetEvidence', req.params.id);
+    if (record.custodian.cn !== req.user.username) throw Object.assign(new Error('only the current custodian may run an identity check'), { status: 403 });
+    const manifest = loadManifest(record);
+    if (!manifest || fp.manifestHash(manifest) !== record.manifest_sha256) throw Object.assign(new Error('manifest missing or does not match the ledger'), { status: 409 });
+    const queries = (req.files || []).map((f) => ({ buffer: f.buffer, name: f.originalname, media_type: f.mimetype, sha256: fp.hashBuffer(f.buffer).sha256 }));
+    if (!queries.length) throw badRequest('upload the new captures to compare');
+    const fps = manifest.identity_fingerprints || [];
+    const byArt = Object.fromEntries(manifest.artefacts.map((a) => [a.artefact_id, a]));
+    const phRefs = fps.filter((x) => x.method === 'phash-dct-64').map((x) => ({ art: byArt[x.source_artefact_ids[0]], value: x.value, threshold: ruleThreshold(x.match_rule) }));
+    const meshRefs = fps.filter((x) => x.method === 'mesh-icp-rms').map((x) => byArt[x.source_artefact_ids[0]]);
+    const qImages = queries.filter((q) => l2.isImage(q.media_type, q.name));
+    const qMeshes = queries.filter((q) => l2.isMesh(q.media_type, q.name));
+    const pairs = []; const notes = [];
+
+    if (qImages.length) {
+        const qph = await l2.phashes(qImages);
+        const pageRefs = phRefs.filter((r) => r.art.role === 'page_scan').sort((a, b) => a.art.sequence - b.art.sequence);
+        if (manifest.evidence_class === 'PHYSICAL_DOCUMENT' && pageRefs.length) {
+            // documents: compare in page order; a different page count is itself a non-match
+            if (qImages.length !== pageRefs.length) notes.push(`page count differs: ${qImages.length} new scan(s) vs ${pageRefs.length} reference page(s)`);
+            qImages.forEach((q, i) => {
+                const r = pageRefs[i];
+                if (!r || !qph[i]) { pairs.push({ query: q.name, query_sha256: q.sha256, ref_artefact_id: r ? r.art.artefact_id : null, method: 'phash-dct-64', distance: null, threshold: r ? r.threshold : null, pass: false }); return; }
+                const d = l2.hamming(qph[i], r.value);
+                pairs.push({ query: q.name, query_sha256: q.sha256, ref_artefact_id: r.art.artefact_id, page: i + 1, method: 'phash-dct-64', distance: d, threshold: r.threshold, pass: d <= r.threshold });
+            });
+        } else {
+            qImages.forEach((q, i) => {
+                if (!phRefs.length || !qph[i]) { pairs.push({ query: q.name, query_sha256: q.sha256, ref_artefact_id: null, method: 'phash-dct-64', distance: null, pass: false }); return; }
+                const best = phRefs.map((r) => ({ r, d: l2.hamming(qph[i], r.value) })).sort((a, b) => a.d - b.d)[0];
+                pairs.push({ query: q.name, query_sha256: q.sha256, ref_artefact_id: best.r.art.artefact_id, method: 'phash-dct-64', distance: best.d, threshold: best.r.threshold, pass: best.d <= best.r.threshold });
+            });
+        }
+    }
+    if (qMeshes.length) {
+        if (!meshRefs.length) notes.push('no reference 3D scan registered for this item');
+        else {
+            const ref = meshRefs[0];
+            const refBuf = store.get(ref.sha256).buf;
+            const r = await l2.withTempFiles([{ buffer: refBuf, name: 'ref.ply', mesh: true }, ...qMeshes.map((q) => ({ buffer: q.buffer, name: 'q.ply', mesh: true }))],
+                (paths) => l2.runBatch(paths.slice(1).map((p) => ({ op: 'compare-mesh', ref: paths[0], query: p }))));
+            qMeshes.forEach((q, i) => {
+                const x = r.results[i];
+                const rule = l2.RULES['mesh-icp-rms'];
+                const pass = !!(x && x.ok && x.rms_mm <= rule.rms && x.max_mm <= rule.max);
+                pairs.push({ query: q.name, query_sha256: q.sha256, ref_artefact_id: ref.artefact_id, method: 'mesh-icp-rms', rms_mm: x && x.rms_mm, max_mm: x && x.max_mm, threshold: rule.rule, pass });
+            });
+        }
+    }
+    const other = queries.length - qImages.length - qMeshes.length;
+    if (other) notes.push(`${other} file(s) are neither images nor 3D scans and were not compared`);
+    const compared = pairs.filter((p) => p.distance !== null || p.rms_mm !== undefined);
+    const result = !compared.length ? 'INCONCLUSIVE' : (pairs.every((p) => p.pass) && !notes.some((n) => /page count/.test(n))) ? 'MATCH' : 'NO_MATCH';
+    const methods = [...new Set(pairs.map((p) => p.method))];
+    const worst = compared.filter((p) => p.method === 'phash-dct-64').reduce((m, p) => Math.max(m, p.distance), -1);
+    const verification = { method: methods.join('+') || 'none', method_version: '1', result,
+        score: worst >= 0 ? String(worst) : undefined, threshold: worst >= 0 ? String(l2.RULES['phash-dct-64'].threshold) : undefined,
+        query_artefact_sha256: queries.map((q) => q.sha256) };
+    for (const q of queries) store.put(q.buffer, { agency: req.user.org, media_type: q.media_type, uploaded_by: req.user.username, file_name: `identity-check/${q.name}` });
+    const event = await fabric.submit(req.user, 'RecordEvent', [req.params.id, 'VERIFY_IDENTITY',
+        JSON.stringify({ verification, pairs: pairs.map(({ query, ...p }) => ({ file: query, ...p })), notes, tool: 'evidence_hash.py l2-batch' }),
+        req.body.reason || 'Identity check against the reference captures', req.body.location || '']);
+    res.json({ result, pairs, notes, verification, event });
 }));
 
 app.use('/api', api);

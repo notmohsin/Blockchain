@@ -21,6 +21,7 @@
   // action form state
   let a = $state({ to_user: '', reason: '', seals: '', intact: true, method: 'phash-dct-64', result: 'MATCH', score: '', threshold: '10', court_order: '', exhibit: '', attach: [] });
   let verifyResult = $state(null);
+  let idResult = $state(null);
 
   async function load() {
     error = '';
@@ -38,7 +39,7 @@
   const canAct = $derived(isCustodian && rec.status !== 'IN_TRANSFER' && !final);
 
   function open(p) {
-    panel = panel === p ? '' : p; ok = ''; error = ''; verifyResult = null;
+    panel = panel === p ? '' : p; ok = ''; error = ''; verifyResult = null; idResult = null;
     a.reason = ''; a.seals = p === 'accept' || p === 'reject' ? (rec.seal_ids || []).join(', ') : ''; a.attach = [];
     if (p === 'dispose') a.result = 'RETURN';
     if (p === 'identity') a.result = 'MATCH';
@@ -59,6 +60,16 @@
   async function doIdentity() {
     const q = await hashesOf(a.attach);
     await doEvent('VERIFY_IDENTITY', { verification: { method: a.method, method_version: '1', result: a.result, score: a.score || undefined, threshold: a.threshold || undefined, query_artefact_sha256: q } });
+  }
+  async function doIdentityRun() {
+    busy = true; error = ''; ok = '';
+    try {
+      const fd = new FormData();
+      [...a.attach].forEach((f, i) => fd.append(`q${i}`, f, f.name));
+      fd.append('reason', a.reason);
+      idResult = await api.identityCheck(id, fd);
+      panel = ''; a.reason = ''; a.attach = []; await load();
+    } catch (e) { error = e.message; } finally { busy = false; }
   }
   async function doExamEnd() { await doEvent('EXAMINE_END', { attachments_sha256: await hashesOf(a.attach) }); }
 
@@ -137,7 +148,8 @@
           {#if canAct && rec.status === 'IN_CUSTODY'}<button class="btn-primary" onclick={() => open('transfer')} data-action="transfer">Transfer custody</button>{/if}
           {#if canAct}
             <button class="btn-ghost" onclick={() => open('seal')} data-action="seal">Seal / reseal</button>
-            <button class="btn-ghost" onclick={() => open('identity')} data-action="identity">Record identity check</button>
+            <button class="btn-ghost" onclick={() => open('identity-run')} data-action="identity-run">Run identity check</button>
+            <button class="btn-ghost" onclick={() => open('identity')} data-action="identity">Record manual check</button>
             {#if user.role === 'examiner' && rec.status === 'IN_CUSTODY'}<button class="btn-ghost" onclick={() => open('exam-start')} data-action="exam-start">Start examination</button>{/if}
             {#if user.role === 'examiner' && rec.status === 'UNDER_EXAMINATION'}<button class="btn-ghost" onclick={() => open('exam-end')} data-action="exam-end">Complete examination</button>{/if}
             {#if rec.status === 'IN_CUSTODY'}<button class="btn-ghost" onclick={() => open('court')} data-action="court">Record court submission</button>
@@ -149,7 +161,7 @@
 
         {#if panel}
           <form class="mt-4 space-y-3 rounded-md bg-ink-50 p-4" onsubmit={(e) => { e.preventDefault(); ({ transfer: doTransfer, accept: doAccept, reject: doReject, cancel: doCancel,
-            seal: () => doEvent('RESEAL', { seal_ids: seals() }), identity: doIdentity, 'exam-start': () => doEvent('EXAMINE_START', {}), 'exam-end': doExamEnd,
+            seal: () => doEvent('RESEAL', { seal_ids: seals() }), identity: doIdentity, 'identity-run': doIdentityRun, 'exam-start': () => doEvent('EXAMINE_START', {}), 'exam-end': doExamEnd,
             court: () => doEvent('SUBMIT_COURT', { court: 'CJM Gandhinagar', exhibit: a.exhibit || undefined }),
             dispose: () => doEvent(a.result, { court_order_ref: a.court_order }) })[panel](); }} data-testid="action-form">
             {#if panel === 'transfer'}
@@ -174,6 +186,11 @@
               </div>
               <div><label class="label" for="qf">New captures used for the check (hashed in your browser)</label><input id="qf" type="file" multiple onchange={(e) => (a.attach = e.target.files)} /></div>
             {/if}
+            {#if panel === 'identity-run'}
+              <div><label class="label" for="iq">New captures of the item (page re-scans in page order, photos, or a 3D scan)</label>
+                <input id="iq" type="file" multiple required onchange={(e) => (a.attach = e.target.files)} /></div>
+              <p class="text-xs text-ink-600">They are compared with the reference fingerprints in the manifest (pHash for images, 3D deviation for scans). The new captures are stored encrypted and the result is recorded on the ledger.</p>
+            {/if}
             {#if panel === 'exam-end'}<div><label class="label" for="rf">Examination report(s) (hashed in your browser; only the hash is recorded)</label><input id="rf" type="file" multiple onchange={(e) => (a.attach = e.target.files)} /></div>{/if}
             {#if panel === 'court'}<div><label class="label" for="ex">Exhibit / article number</label><input id="ex" class="input" bind:value={a.exhibit} placeholder="Article 4" /></div>{/if}
             {#if panel === 'dispose'}
@@ -188,6 +205,17 @@
           </form>
         {/if}
 
+        {#if idResult}
+          <div class="mt-4 rounded-md border p-4 {idResult.result === 'MATCH' ? 'border-ok-600/40 bg-ok-50' : 'border-bad-600/40 bg-bad-50'}" data-testid="identity-result" data-result={idResult.result}>
+            <p class="text-lg font-semibold {idResult.result === 'MATCH' ? 'text-ok-700' : 'text-bad-700'}">Identity check: {idResult.result.replace('_', ' ')}</p>
+            {#each idResult.notes as n}<p class="text-sm text-bad-700">{n}</p>{/each}
+            <table class="mt-2 w-full text-left text-xs"><thead class="text-ink-400"><tr><th>New capture</th><th>Reference</th><th>Method</th><th>Score</th><th></th></tr></thead>
+              <tbody>{#each idResult.pairs as p}<tr class="border-t border-ink-100"><td class="py-1">{p.query}</td><td>{p.ref_artefact_id || '—'}{p.page ? ` (page ${p.page})` : ''}</td><td>{p.method}</td>
+                <td class="font-mono">{p.distance ?? ''}{p.rms_mm !== undefined ? `rms ${p.rms_mm} / max ${p.max_mm} mm` : ''}{p.distance !== undefined && p.distance !== null ? ` ≤ ${p.threshold}?` : ''}</td>
+                <td class="font-semibold {p.pass ? 'text-ok-700' : 'text-bad-700'}">{p.pass ? 'pass' : 'FAIL'}</td></tr>{/each}</tbody></table>
+            <p class="mt-1 text-xs text-ink-600">Thresholds are illustrative until calibrated on real captures (D-020). Recorded as a VERIFY_IDENTITY event.</p>
+          </div>
+        {/if}
         {#if verifyResult}
           <div class="mt-4 rounded-md border p-4 {verifyResult.result === 'MATCH' ? 'border-ok-600/40 bg-ok-50' : 'border-bad-600/40 bg-bad-50'}" data-testid="verify-result" data-result={verifyResult.result}>
             <p class="text-lg font-semibold {verifyResult.result === 'MATCH' ? 'text-ok-700' : 'text-bad-700'}">{verifyResult.result === 'MATCH' ? '✓ MATCH' : verifyResult.result === 'NO_MATCH' ? '✗ NO MATCH' : '? INCONCLUSIVE'}</p>

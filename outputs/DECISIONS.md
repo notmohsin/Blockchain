@@ -62,6 +62,7 @@ This file records every decision about the project, so that anyone (you, the pro
 | D-045 | 2026-11-19 | Evidence store backend: encrypted content-addressed files in the gateway (not MinIO) | Accepted | Implementer (delegated) | **pending** |
 | D-046 | 2026-11-19 | Browser acceptance tests with `playwright-core` driving the system Chromium | Accepted | Implementer (delegated) | **pending** |
 | D-047 | 2026-11-19 | UI scope and behaviour: role-aware actions, browser hashing shown before upload, reasons mandatory | Accepted | Implementer (delegated) | **pending** |
+| D-048 | 2026-11-20 | Identity checks (L2) run by the app via the Python reference tool; reference fingerprints computed at registration | Accepted | Implementer (delegated) | **pending** |
 
 ---
 
@@ -386,6 +387,23 @@ This file records every decision about the project, so that anyone (you, the pro
 - **Bugs found and fixed by the browser test:**
   - a signed-in user visiting `#/login` saw the login form;
   - "Start examination" reused a stale reason from the previous action.
+
+### D-048 Identity checks (L2) run by the application
+- **Date:** 2026-11-20 · **Status:** Accepted · **Decided by:** Implementer (delegated, continuing autonomous run) · **Review: pending**
+- **Context:** Roadmap M6. Until now the examiner typed in the result of an identity check.
+- **Decision:**
+  - **One implementation.** The gateway calls the Python reference tool (`outputs/tools/evidence_hash.py l2-batch`) as a subprocess, so the app and the report use *the same* pHash and 3D code. There is no second implementation to keep in sync.
+  - **At registration:** the gateway computes a `phash-dct-64` fingerprint for every image artefact (rule `hamming<=10`), and a `mesh-icp-rms` reference for every 3D scan (rule `rms_mm<=0.60 and max_mm<=3.00`). These are written into the manifest, so they are themselves protected by the manifest hash on the ledger.
+  - **`POST /api/evidence/:id/identity-check`:** the custodian uploads new captures.
+    - **Physical documents:** page scans are compared **in page order**; a different page count is itself a NO_MATCH.
+    - **Other items:** each image is matched against the closest reference image.
+    - **3D scans:** compared with the reference scan, which is decrypted from the store.
+  - The new captures are stored encrypted. The result (method, worst score, threshold, per-pair distances, and the L1 hashes of the new captures) is recorded as a `VERIFY_IDENTITY` event.
+  - The manual "record a check" action stays, for methods the tool doesn't cover (seal inspection, visual examination).
+- **Operational notes:**
+  - The tool runs with its own directory as the working directory and *without* `python -I`. In isolated mode, user-installed scipy is invisible, and the 3D comparison silently fell back to a brute-force search that took minutes.
+  - The fallback now subsamples to at most 4,000 points.
+- **Limitation:** the thresholds remain the illustrative values of D-020 until they are calibrated on real captures.
 
 ---
 

@@ -110,6 +110,24 @@ async function main() {
     r = await call(io, 'POST', `/api/evidence/${photoId}/cancel`, { reason: 'Image analysis not needed' });
     check(r.status === 200 && r.data.status === 'IN_CUSTODY', 'IO cancels the transfer (endorsed by Police and FSL)', r.status !== 200 ? r.data.error : '');
 
+    // 2c. M6: a physical item with a 3D scan; the IO (custodian) checks re-scans against it
+    const knifeFiles = [['kp', 'knife.jpg', 'image/jpeg', file('photo/IMG_0002_second_shot.jpg', 'kphoto')], ['k3d', 'reference_scan.ply', 'model/ply', file('knife/reference_scan.ply', 'k3d')]];
+    const knifeDraft = { evidence_class: 'PHYSICAL_ITEM', title: 'Kitchen knife recovered beside stain (marker 1)', case: CASE, collection: COLL('2026-11-19T10:58:00+05:30'),
+        packaging: { container: 'weapon tube in tamper-evident bag', seal_ids: ['TEB-GJ-0007738'] },
+        class_attributes: { item_category: 'edged weapon', dimensions_mm: { length: '295' }, material: 'steel, polymer handle', unique_marks: ['scratch near heel'],
+            scan_3d: { method: 'structured-light', point_spacing_mm: '0.5', stated_accuracy_mm: '0.1' } },
+        artefacts: [{ file_field: 'kp', role: 'closeup_photo', captured_at: '2026-11-19T10:58:00+05:30', capture_device: PHONE },
+            { file_field: 'k3d', role: 'scan_3d', media_type: 'model/ply', captured_at: '2026-11-19T13:40:00+05:30', capture_device: { device_type: '3D Scanner', make_model: 'Structured-light scanner' } }] };
+    r = await call(io, 'POST', `/api/evidence`, form(knifeDraft, knifeFiles), true);
+    const knifeId = r.data.record && r.data.record.evidence_id;
+    const kfp = (r.data.manifest && r.data.manifest.identity_fingerprints) || [];
+    check(r.status === 201 && kfp.some((x) => x.method === 'mesh-icp-rms') && kfp.some((x) => x.method === 'phash-dct-64'), `knife registered with pHash + 3D reference fingerprints in its manifest -> ${knifeId}`, r.status !== 201 ? JSON.stringify(r.data) : '');
+    const meshForm = (rel) => { const fd = new FormData(); fd.append('q', new Blob([file(rel, rel)], { type: 'model/ply' }), path.basename(rel)); return fd; };
+    r = await call(io, 'POST', `/api/evidence/${knifeId}/identity-check`, meshForm('knife/rescan_same.ply'), true);
+    check(r.data.result === 'MATCH', '3D re-scan of the same knife -> MATCH', r.data.pairs ? `rms ${r.data.pairs[0].rms_mm} mm, max ${r.data.pairs[0].max_mm} mm` : r.data.error);
+    r = await call(io, 'POST', `/api/evidence/${knifeId}/identity-check`, meshForm('knife/rescan_tip_broken.ply'), true);
+    check(r.data.result === 'NO_MATCH', '3D re-scan with the tip broken off -> NO_MATCH', r.data.pairs ? `max ${r.data.pairs[0].max_mm} mm` : r.data.error);
+
     // 3. transfer notebook Police -> FSL (two-phase, both agencies endorse)
     r = await call(io, 'POST', `/api/evidence/${nbId}/transfer`, { to_user: 'examiner.mehta', reason: 'Forwarded to FSL for questioned-document examination, letter CPS/FSL/412/2026' });
     check(r.status === 200 && r.data.status === 'IN_TRANSFER', 'IO initiates transfer of the notebook to examiner.mehta', r.status !== 200 ? r.data.error : '');
@@ -124,6 +142,19 @@ async function main() {
     r = await call(ex, 'POST', `/api/evidence/${nbId}/events`, { type: 'VERIFY_IDENTITY', reason: 'Identity check on receipt: pages re-scanned and compared with reference scans',
         details: { verification: { method: 'phash-dct-64', method_version: '1', result: 'MATCH', score: '4', threshold: '10', query_artefact_sha256: [sha(file('notebook/fsl_rescan/page_001.png', 'r1'))] } } });
     check(r.status === 200, 'examiner records VERIFY_IDENTITY = MATCH', r.status !== 200 ? r.data.error : '');
+    // M6 (D-048): automatic identity checks against the reference fingerprints in the manifest
+    const rescans = [1, 2, 3, 4, 5, 6].map((p) => [`q${p}`, `rescan_page_00${p}.png`, 'image/png', file(`notebook/fsl_rescan/page_00${p}.png`, `rs${p}`)]);
+    const idForm = (list) => { const fd = new FormData(); list.forEach(([f, n, t, b]) => fd.append(f, new Blob([b], { type: t }), n)); fd.append('reason', 'Identity check on receipt'); return fd; };
+    r = await call(ex, 'POST', `/api/evidence/${nbId}/identity-check`, idForm(rescans), true);
+    check(r.status === 200 && r.data.result === 'MATCH' && r.data.pairs.length === 6, 'automatic identity check: FSL re-scan of all 6 pages -> MATCH', r.status !== 200 ? r.data.error : `max pHash distance ${Math.max(...(r.data.pairs || []).map((x) => x.distance))}`);
+    const forgedSet = rescans.map((x, i) => (i === 3 ? ['q4', 'rescan_page_004.png', 'image/png', file('notebook/forged/page_004.png', 'forged')] : x));
+    r = await call(ex, 'POST', `/api/evidence/${nbId}/identity-check`, idForm(forgedSet), true);
+    const failedPages = (r.data.pairs || []).filter((x) => !x.pass).map((x) => x.page);
+    check(r.data.result === 'NO_MATCH' && JSON.stringify(failedPages) === '[4]', 'automatic identity check: a substituted page 4 -> NO_MATCH naming page 4', JSON.stringify(failedPages));
+    r = await call(ex, 'POST', `/api/evidence/${nbId}/identity-check`, idForm(rescans.slice(0, 5)), true);
+    check(r.data.result === 'NO_MATCH' && r.data.notes.some((n) => /page count/.test(n)), 'automatic identity check: a missing page -> NO_MATCH (page count)');
+    r = await call(io, 'POST', `/api/evidence/${nbId}/identity-check`, idForm(rescans), true);
+    check(r.status === 403, 'only the custodian may run an identity check');
     r = await call(mal, 'POST', `/api/evidence/${nbId}/events`, { type: 'SEAL', reason: 'reseal', details: { seal_ids: ['X'] } });
     check(r.status === 400 && /custodian/.test(r.data.error), 'a Police user who is not the custodian cannot record custody actions', r.data.error);
     r = await call(ex, 'POST', `/api/evidence/${nbId}/events`, { type: 'EXAMINE_START', reason: 'Questioned-document examination begins' });
@@ -172,7 +203,7 @@ async function main() {
     // 8. history: actors come from certificates; order is the custody story
     r = await call(io, 'GET', `/api/evidence/${nbId}`);
     const types = r.data.history.map((e) => e.type);
-    const expect = ['REGISTER', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'VERIFY_IDENTITY', 'EXAMINE_START', 'EXAMINE_END', 'RESEAL',
+    const expect = ['REGISTER', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'VERIFY_IDENTITY', 'VERIFY_IDENTITY', 'VERIFY_IDENTITY', 'VERIFY_IDENTITY', 'EXAMINE_START', 'EXAMINE_END', 'RESEAL',
         'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'SUBMIT_COURT', 'VERIFY_INTEGRITY', 'ACCESS'];
     check(JSON.stringify(types) === JSON.stringify(expect), `notebook history has the full custody chain (${types.length} events)`, types.join(' > '));
     const actors = [...new Set(r.data.history.map((e) => `${e.actor.cn}/${e.actor.msp}/${e.actor.role}`))];

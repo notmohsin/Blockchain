@@ -109,12 +109,13 @@ try {
   await openEvidence(nbId);
   msg = await act('accept', () => page.fill('#why', 'Received at FSL evidence counter'));
   check(/accepted/.test(msg) && (await page.textContent('[data-testid=custodian]')).includes('examiner.mehta'), 'examiner accepts custody (seal pre-filled and confirmed)', msg);
-  msg = await act('identity', async () => {
-    await page.fill('#sc', '4');
-    await page.setInputFiles('#qf', path.join(WE, 'notebook/fsl_rescan/page_001.png'));
-    await page.fill('#why', 'Identity check on receipt: re-scan compared with reference scans');
-  });
-  check(/Identity verified/.test(msg), 'examiner records an identity check (re-scan hashed in the browser)', msg);
+  await page.click('[data-action=identity-run]');
+  await page.setInputFiles('#iq', [1, 2, 3, 4, 5, 6].map((p) => path.join(WE, `notebook/fsl_rescan/page_00${p}.png`)));
+  await page.fill('#why', 'Identity check on receipt: re-scan compared with reference scans');
+  await page.click('[data-testid=action-submit]');
+  await page.waitForSelector('[data-testid=identity-result]', { timeout: 120000 });
+  check((await page.getAttribute('[data-testid=identity-result]', 'data-result')) === 'MATCH', 'examiner runs an automatic identity check (6 re-scanned pages): MATCH');
+  await shot('05b-identity-check');
   msg = await act('exam-start', () => page.fill('#why', 'Questioned-document examination begins'));
   check(/Examination started/.test(msg), 'examiner starts the examination (own reason)', msg);
   fs.writeFileSync(path.join(SHOTS, 'fsl-report.txt'), `FSL report on ${nbId}: entries consistent with a single writer.`);
@@ -136,7 +137,7 @@ try {
   check((await page.getAttribute('[data-testid=verify-result]', 'data-result')) === 'MATCH', 'court verifies page 4 on the evidence page: MATCH');
   const tl = await timeline();
   const reasons = await page.$$eval('[data-testid=timeline] li', (els) => els.map((e) => e.querySelector('.text-ink-600')?.textContent));
-  check(new Set(reasons).size === reasons.length || reasons.filter((r) => /Identity check/.test(r)).length === 1, 'each event keeps its own reason (no stale form text)');
+  check(reasons.filter((r) => /Identity check/.test(r || '')).length === 1, 'each event keeps its own reason (no stale form text)');
   const want = ['REGISTER', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'VERIFY_IDENTITY', 'EXAMINE_START', 'EXAMINE_END', 'TRANSFER_INITIATE', 'TRANSFER_ACCEPT', 'SUBMIT_COURT', 'VERIFY_INTEGRITY'];
   check(JSON.stringify(tl) === JSON.stringify(want), `timeline shows the full chain (${tl.length} events)`, tl.join(' > '));
   await shot('06-court-evidence-page');
