@@ -49,6 +49,9 @@ volumes:
   peer0.police.custodychain.local:
   peer0.fsl.custodychain.local:
   peer0.court.custodychain.local:
+  ca.police.custodychain.local:
+  ca.fsl.custodychain.local:
+  ca.court.custodychain.local:
 
 networks:
   bft:
@@ -194,3 +197,48 @@ services:
       - ./organizations/peerOrganizations/court.custodychain.local/peers/peer0.court.custodychain.local:/etc/hyperledger/crypto
       - peer0.court.custodychain.local:/var/hyperledger/production
     ports: ["9051:9051", "9453:9453"]
+
+  # Fabric CA for police users (D-035): signs with the agency's existing cryptogen CA key
+  ca.police.custodychain.local:
+    <<: *common
+    container_name: ca.police.custodychain.local
+    image: hyperledger/fabric-ca:1.5.12
+    command: sh -c 'fabric-ca-server start -b admin:${CA_ADMIN_PW:-adminpw} --port 7054 --ca.name ca-police --ca.certfile /cryptogen-ca/ca.police.custodychain.local-cert.pem --ca.keyfile /cryptogen-ca/priv_sk'
+    environment:
+      FABRIC_CA_HOME: /etc/hyperledger/fabric-ca-server
+      FABRIC_CA_SERVER_TLS_ENABLED: "false"
+      FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS: 127.0.0.1:19443
+    volumes:
+      - ./organizations/peerOrganizations/police.custodychain.local/ca:/cryptogen-ca:ro
+      - ca.police.custodychain.local:/etc/hyperledger/fabric-ca-server
+    ports: ["7054:7054"]
+
+  # Fabric CA for fsl users (D-035): signs with the agency's existing cryptogen CA key
+  ca.fsl.custodychain.local:
+    <<: *common
+    container_name: ca.fsl.custodychain.local
+    image: hyperledger/fabric-ca:1.5.12
+    command: sh -c 'fabric-ca-server start -b admin:${CA_ADMIN_PW:-adminpw} --port 8054 --ca.name ca-fsl --ca.certfile /cryptogen-ca/ca.fsl.custodychain.local-cert.pem --ca.keyfile /cryptogen-ca/priv_sk'
+    environment:
+      FABRIC_CA_HOME: /etc/hyperledger/fabric-ca-server
+      FABRIC_CA_SERVER_TLS_ENABLED: "false"
+      FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS: 127.0.0.1:19443
+    volumes:
+      - ./organizations/peerOrganizations/fsl.custodychain.local/ca:/cryptogen-ca:ro
+      - ca.fsl.custodychain.local:/etc/hyperledger/fabric-ca-server
+    ports: ["8054:8054"]
+
+  # Fabric CA for court users (D-035): signs with the agency's existing cryptogen CA key
+  ca.court.custodychain.local:
+    <<: *common
+    container_name: ca.court.custodychain.local
+    image: hyperledger/fabric-ca:1.5.12
+    command: sh -c 'fabric-ca-server start -b admin:${CA_ADMIN_PW:-adminpw} --port 9054 --ca.name ca-court --ca.certfile /cryptogen-ca/ca.court.custodychain.local-cert.pem --ca.keyfile /cryptogen-ca/priv_sk'
+    environment:
+      FABRIC_CA_HOME: /etc/hyperledger/fabric-ca-server
+      FABRIC_CA_SERVER_TLS_ENABLED: "false"
+      FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS: 127.0.0.1:19443
+    volumes:
+      - ./organizations/peerOrganizations/court.custodychain.local/ca:/cryptogen-ca:ro
+      - ca.court.custodychain.local:/etc/hyperledger/fabric-ca-server
+    ports: ["9054:9054"]
