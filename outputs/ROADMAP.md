@@ -2,7 +2,7 @@
 
 *Last updated 2026-11-19. Decisions are logged in [`DECISIONS.md`](DECISIONS.md). Completed phases 1–3 are in [`PLAN.md`](PLAN.md).*
 
-> **Status:** **M0–M9 are done** on branch `prototype/m0-m5` (autonomous runs, D-032). How to run and test it: [`CustodyChain/PROTOTYPE.md`](../CustodyChain/PROTOTYPE.md).
+> **Status:** **M0–M9 are done** (autonomous runs on branch `prototype/m0-m5`, D-032; fast-forwarded into `main` on 2026-11-25). How to run and test it: [`CustodyChain/PROTOTYPE.md`](../CustodyChain/PROTOTYPE.md).
 >
 > | Milestone | Commit | Evidence |
 > |---|---|---|
